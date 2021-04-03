@@ -14,7 +14,7 @@ def patching(locations, patch_size=16):
     return locs
 
 
-class VTransformer(nn.Module):
+class KnowledgeFusion(nn.Module):
     '''
     parameters:
         image: N * H * W * C
@@ -29,7 +29,7 @@ class VTransformer(nn.Module):
         3D tensor: N * ((H/P) * (W/P)) * dim
     '''
 
-    def __init__(self, *, image_size, emb_size, num_classes, dims, transformer, channels=3, patch_size=16):
+    def __init__(self, *, image_size, emb_size, dims, transformer, channels=3, patch_size=16):
         super().__init__()
         self.patch_size = patch_size
         self.input_dim = dims[0] + emb_size
@@ -62,7 +62,8 @@ class VTransformer(nn.Module):
         locs = normalize(locations, self.patch_size)
         out_shape = img.shape
         out_shape[-1] = self.output_dim
-        results = torch.zeros(out_shape)
+        cnt = torch.zeros(img.shape[:-1])
+        result = torch.zeros(out_shape)
 
         for loc in locs:
             box = img[:, location[0]:location[2],
@@ -76,6 +77,8 @@ class VTransformer(nn.Module):
             cls_tokens = repeat(self.cls_token, '() n d -> b n d', b=b)
             x = torch.cat((cls_tokens, x), dim=1)
             x = self.layers(x)
+
+            result[]
 
     def forward(self, imgs, locations, embs):
         results = []
