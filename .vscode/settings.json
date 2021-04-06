@@ -1,3 +1,5 @@
 {
-    "python.pythonPath": "D:\\Softwares\\Anaconda3\\envs\\shopee_detection\\python.exe"
+    "python.pythonPath": "D:\\Softwares\\Anaconda3\\envs\\shopee_detection\\python.exe",
+    "python.linting.pylintEnabled": true,
+    "python.linting.enabled": true
 }
