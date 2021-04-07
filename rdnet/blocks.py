@@ -31,7 +31,7 @@ class FusionBlock(nn.Module):
         self.cls_token = nn.Parameter(torch.randn(1, 1, out_dim))
 
         self.transformer = transformer(
-            dim=out_dim, depth=1, heads=heads, dim_head=dim_head)
+            dim=out_dim, depth=1, **kwargs)
         self.mlp = nn.Linear(out_dim * 2, out_dim)
 
     def get_readout(patches):
@@ -96,7 +96,7 @@ class KnowledgeFusion(nn.Module):
 
     def forward(self, imgs, locations, embs):
         '''
-        Params:
+        Params:kwargs
         Return:
         '''
         b, n, _ = embs.shape
@@ -118,10 +118,15 @@ class KnowledgeFusion(nn.Module):
         result = (patches * masks).sum(dim=1) / masks.sum(dim=1)
         return result
 
-class VTBlock(nn.Module):
+class ViTBlock(nn.Module):
     '''
         Descriptions:
         Params:
     '''
 
-    def __init__
+    def __init__(self, num_patches, dim):
+        super().__init__()
+        num_p
+
+    def forward(self, patches):
+
