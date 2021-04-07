@@ -1,4 +1,11 @@
 {
+<<<<<<< HEAD
     "python.linting.pylintEnabled": true,
     "python.linting.enabled": true
+=======
+    "python.pythonPath": "D:\\Softwares\\Anaconda3\\envs\\shopee_detection\\python.exe",
+    "python.linting.pylintEnabled": false,
+    "python.linting.enabled": true,
+    "python.linting.pycodestyleEnabled": true
+>>>>>>> 118ca34c625838bb3e5414d204a0e7ed3a23e5f0
 }
