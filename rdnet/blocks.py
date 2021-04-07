@@ -16,8 +16,17 @@ def patching(locations, patch_size=16):
 class FusionBlock(nn.Module):
     '''
     Description:
+        Perform cross-attention between embeddings before fusing with image patches:
+        - Cross-attention module will learn the relational information between objects
+        - Visual - relationship fusion will inject knowledge from relation into patches
+        through concatenation/sum
     Params:
-
+        - emb_size: dimension of embedding tensor
+        - inp_dim: dimension of input patches
+        - out_dim: dimension of patches to be output
+        - max_patches: maximum number of patches that could be fed
+        - readout: type of readout (ignore/add/proj)
+        - transformer: the class of transformer to be used
     '''
 
     def __init__(self, emb_size, inp_dim, out_dim, max_patches, readout, transformer, **kwargs):
@@ -32,23 +41,31 @@ class FusionBlock(nn.Module):
 
         self.transformer = transformer(
             dim=out_dim, depth=1, heads=heads, dim_head=dim_head)
-        self.mlp = nn.Linear(out_dim * 2, out_dim)
+        self.project = nn.Sequential(
+            nn.Linear(2 * out_dim, out_dim), nn.GELU())
 
     def get_readout(patches):
         if "ignore" in self.readout:
-            return patches[:, :-1]
+            return patches[:, 1:]
         elif "add" in self.readout:
-            return patches[:, :-1] + patches[:, -1]
+            return patches[:, 1:] + patches[:, 0].unsqueeze(1)
         else:
-
-            cls_tokens = repeat(
-                patches[:, -1], "b () d -> b p d", p=patches.shape[1] - 1)
-            return self.mlp(torch.cat([patches[:, :-1], ], dim=1))
+            readout = patches[:, 0].unsqueeze(1).expand_as(patches[:, 1:])
+            features = torch.cat((patches[:, 1:], readout), -1)
+            return self.project(features)
 
     def forward(self, imgs, embs, masks):
         '''
         Params:
+            - B is number of instances in batch, N is number of objects for each instance,
+            P is the number of patches in each instance
+            - C is the dimension of each embedding vector and D is the dimension of each patch 
+            - imgs: Batch of patches with shape BxNxPxD
+            - embs: Batch of embeddings with shape BxNxC
+            - masks: Batch of masks to be processed with shape (BxN)xP
         Return:
+            - Processed patches
+            - Processed embeddings
         '''
         b, n, p, _ = imgs.shape
         x = self.rel_trans(embs)
