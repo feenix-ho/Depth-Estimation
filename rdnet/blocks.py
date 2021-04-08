@@ -5,6 +5,8 @@ from torch.nn import functional as F
 from einops import rearrange, repeat
 from einops.layers.torch import Rearrange
 
+from performer_pytorch import Performer
+
 
 def patching(locations, patch_size=16):
     locs = locations
@@ -135,15 +137,13 @@ class KnowledgeFusion(nn.Module):
         result = (patches * masks).sum(dim=1) / masks.sum(dim=1)
         return result
 
+
 class ViTBlock(nn.Module):
     '''
         Descriptions:
         Params:
     '''
 
-    def __init__(self, num_patches, dim):
-        super().__init__()
-        num_p
+    def __init__(self, embs, num_layers, max_patches, hooks, transformer, **kwargs):
 
-    def forward(self, patches):
-
+        
