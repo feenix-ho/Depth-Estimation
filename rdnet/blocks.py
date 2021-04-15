@@ -67,6 +67,42 @@ def patching(locations, patch_size=16):
     return locs
 
 
+class Slice(nn.Module):
+    def __init__(self, start_index=1):
+        super(Slice, self).__init__()
+        self.start_index = start_index
+
+    def forward(self, x):
+        return x[:, self.start_index :]
+
+
+class AddReadout(nn.Module):
+    def __init__(self, start_index=1):
+        super(AddReadout, self).__init__()
+        self.start_index = start_index
+
+    def forward(self, x):
+        if self.start_index == 2:
+            readout = (x[:, 0] + x[:, 1]) / 2
+        else:
+            readout = x[:, 0]
+        return x[:, self.start_index :] + readout.unsqueeze(1)
+
+
+class ProjectReadout(nn.Module):
+    def __init__(self, in_features, start_index=1):
+        super(ProjectReadout, self).__init__()
+        self.start_index = start_index
+
+        self.project = nn.Sequential(nn.Linear(2 * in_features, in_features), nn.GELU())
+
+    def forward(self, x):
+        readout = x[:, 0].unsqueeze(1).expand_as(x[:, self.start_index :])
+        features = torch.cat((x[:, self.start_index :], readout), -1)
+
+        return self.project(features)
+
+
 class Transpose(nn.Module):
     def __init__(self, dim0, dim1):
         super(Transpose, self).__init__()
@@ -221,23 +257,51 @@ class ViTBlock(nn.Module):
             self.transformers.append(transformer(dim = hidden_dim, depth = cur - pre , **kwargs))
             pre = cur
 
-        self.act_postprocesses = nn.ModuleList()
+    def forward(self, embs):
+        x = embs
+        results = []
 
-        self.act_postprocesses.append(
+        for transformer in self.transformers:
+            x = transformer(x)
+            results.append(t)
+
+        return result
+
+def get_readout_oper(vit_features, features, use_readout, start_index=1):
+    if use_readout == "ignore":
+        readout_oper = [Slice(start_index)] * len(features)
+    elif use_readout == "add":
+        readout_oper = [AddReadout(start_index)] * len(features)
+    elif use_readout == "project":
+        readout_oper = [
+            ProjectReadout(vit_features, start_index) for out_feat in features
+        ]
+    else:
+        assert (
+            False
+        ), "wrong operation for readout token, use_readout can be 'ignore', 'add', or 'project'"
+
+    return readout_oper
+
+class ReassembleBlock(nn.Module):
+    def __init__(self, num_patches, inp_dim, out_dim, readout, start_index=1):
+        self.reassembles = nn.ModuleList()
+
+        self.reassembles.append(
             nn.Sequential(
                 readout_oper[0],
                 Transpose(1, 2),
-                nn.Unflatten(2, torch.Size([size[0] // 16, size[1] // 16])),
+                nn.Unflatten(2, torch.Size([num_patches[0], num_patches[1]])),
                 nn.Conv2d(
-                    in_channels=vit_features,
-                    out_channels=features[0],
+                    in_channels=inp_dim,
+                    out_channels=out_dim[0],
                     kernel_size=1,
                     stride=1,
                     padding=0,
                 ),
                 nn.ConvTranspose2d(
-                    in_channels=features[0],
-                    out_channels=features[0],
+                    in_channels=out_dim[0],
+                    out_channels=out_dim[0],
                     kernel_size=4,
                     stride=4,
                     padding=0,
@@ -248,21 +312,21 @@ class ViTBlock(nn.Module):
             )
         )
 
-        self.act_postprocesses.append(
+        self.reassembles.append(
             nn.Sequential(
                 readout_oper[1],
                 Transpose(1, 2),
-                nn.Unflatten(2, torch.Size([size[0] // 16, size[1] // 16])),
+                nn.Unflatten(2, torch.Size([num_patches[0], num_patches[1]])),
                 nn.Conv2d(
-                    in_channels=vit_features,
-                    out_channels=features[1],
+                    in_channels=inp_dim,
+                    out_channels=out_dim[1],
                     kernel_size=1,
                     stride=1,
                     padding=0,
                 ),
                 nn.ConvTranspose2d(
-                    in_channels=features[1],
-                    out_channels=features[1],
+                    in_channels=out_dim[1],
+                    out_channels=out_dim[1],
                     kernel_size=2,
                     stride=2,
                     padding=0,
@@ -271,16 +335,16 @@ class ViTBlock(nn.Module):
                     groups=1,
                 ),
             )
-        )
+        )            x = transformer(x)
 
-        self.act_postprocesses.append(
+        self.reassembles.append(
             nn.Sequential(
                 readout_oper[2],
                 Transpose(1, 2),
-                nn.Unflatten(2, torch.Size([size[0] // 16, size[1] // 16])),
+                nn.Unflatten(2, torch.Size([num_patches[0], num_patches[1]])),
                 nn.Conv2d(
-                    in_channels=vit_features,
-                    out_channels=features[2],
+                    in_channels=inp_dim,
+                    out_channels=out_dim[2],
                     kernel_size=1,
                     stride=1,
                     padding=0,
@@ -288,21 +352,21 @@ class ViTBlock(nn.Module):
             )
         )
 
-        self.act_postprocesses.append(
+        self.reassembles.append(
             nn.Sequential(
                 readout_oper[3],
                 Transpose(1, 2),
-                nn.Unflatten(2, torch.Size([size[0] // 16, size[1] // 16])),
+                nn.Unflatten(2, torch.Size([num_patches[0], num_patches[1]])),
                 nn.Conv2d(
-                    in_channels=vit_features,
-                    out_channels=features[3],
+                    in_channels=inp_dim,
+                    out_channels=out_dim[3],
                     kernel_size=1,
                     stride=1,
                     padding=0,
                 ),
                 nn.Conv2d(
-                    in_channels=features[3],
-                    out_channels=features[3],
+                    in_channels=out_dim[3],
+                    out_channels=out_dim[3],
                     kernel_size=3,
                     stride=2,
                     padding=1,
@@ -311,36 +375,17 @@ class ViTBlock(nn.Module):
         )
 
     def forward(self, embs):
-        x = embs
         results = []
-        for transformer, act_postprocess in zip(self.transformers, self.act_postprocesses):
-            x = transformer(x)
-            t = act_postprocess[0:2](x)
-            results.append(t)
 
-        unflatten = nn.Sequential(
-            nn.Unflatten(
-                2,
-                torch.Size(
-                    [
-                        h // pretrained.model.patch_size[1],
-                        w // pretrained.model.patch_size[0],
-                    ]
-                ),
-            )
-        )
-        
-        for result in results:
-            if result.ndim == 3:
-                result = unflatten(result)
-
-        for result, act_postprocess in zip(results, self.act_postprocesses):
-            result = act_postprocess[3 : len(act_postprocess)](result)
+        for emb, reassemble in zip(embs, self.reassembles):
+            x = reassemble[0:2](emb)
+            if x.ndim == 3:
+                x = reassemble[2](x)
+            
+            x = reassemble[3:len(reassemble)](x)
+            results.append(x)
 
         return result
-
-class ActPostprocessBlock(nn.Module):
-    def __init__(self, num_patches, )
 
 class Interpolate(nn.Module):
     """Interpolation module."""
