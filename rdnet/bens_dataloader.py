@@ -324,7 +324,10 @@ class DataLoadPreprocess(Dataset):
                         x.append(0)
                     else:
                         x.append(1)
+
+                    x[43:608, 45:472]
                 cropped_image.append(x)
+
             ''' 
             if self.args.do_random_rotate is True:
                 random_angle = (random.random() - 0.5) * 2 * self.args.degree

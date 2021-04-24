@@ -427,7 +427,8 @@ def main_worker(gpu, ngpus_per_node, args):
     best_eval_steps = np.zeros(9, dtype=np.int32)
 
     # Training parameters
-    optimizer = torch.optim.AdamW([{'params': model.module.encoder.parameters(), 'weight_decay': args.weight_decay},
+    # model.parameters()
+    optimizer = torch.optim.AdamW([{'params': model.mo20dule.encoder.parameters(), 'weight_decay': args.weight_decay},
                                    {'params': model.module.decoder.parameters(), 'weight_decay': 0}],
                                   lr=args.learning_rate, eps=args.adam_eps)
 
@@ -520,7 +521,7 @@ def main_worker(gpu, ngpus_per_node, args):
                 mask = depth_gt > 0.1
             else:
                 mask = depth_gt > 1.0
-
+            # computeloss
             loss = silog_criterion.forward(
                 depth_est, depth_gt, mask.to(torch.bool))
             loss.backward()
