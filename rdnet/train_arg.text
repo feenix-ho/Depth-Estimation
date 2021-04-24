@@ -1,0 +1,13 @@
+[DEFAULT]
+data_path = drive/MyDrive/dataset
+image_height = 480
+image_width = 640
+patch_size = 32
+knowledge_dims = 4096,2048,1024
+dense_dims = 1024,1024,1024,1024
+latent_dims = 256
+emb_size = 4096
+readout = ignore
+hooks = 3,6,9,12
+scale_factor = 
+mode = 
