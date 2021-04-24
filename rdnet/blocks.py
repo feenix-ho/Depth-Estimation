@@ -310,7 +310,7 @@ class ReassembleBlock(nn.Module):
                     groups=1,
                 ),
             )
-        )            x = transformer(x)
+        )
 
         self.reassembles.append(
             nn.Sequential(
@@ -324,17 +324,7 @@ class ReassembleBlock(nn.Module):
                     stride=1,
                     padding=0,
                 ),
-                    results = []
-
-        for emb, reassemble in zip(embs, self.reassembles):
-            x = reassemble[0:2](emb)
-            if x.ndim == 3:
-                x = reassemble[2](x)
-            
-            x = reassemble[3:len(reassemble)](x)
-            results.append(x)
-
-        return result)
+            )
         )
 
         self.reassembles.append(
