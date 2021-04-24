@@ -8,4 +8,6 @@ dense_dims = 1024,1024,1024,1024
 latent_dims = 256
 emb_size = 4096
 readout = ignore
-
+hooks = 3,6,9,12
+scale_factor = 
+mode = 
