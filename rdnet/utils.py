@@ -74,6 +74,12 @@ def compute_loss(self, trimmed=1., num_scale=4, alpha=.5, **kwagrs):
         return (imgs - t) / s
 
     aligned_preds = align(preds, masks)
+    aligned_targets = align(targets, masks)
+
+    loss = compute_ssi(preds, targets, masks, trimmed)
+    if alpha > 0.:
+        loss += alpha * compute_reg(num_scale=num_scale, kwargs)
+    return loss.mean(dim=0)
 
 
 def _make_fusion_block(features, use_bn):

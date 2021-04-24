@@ -6,13 +6,6 @@ from einops import rearrange, repeat
 from einops.layers.torch import Rearrange
 
 
-def patching(locations, patch_size=16):
-    locs = locations
-    locs[:, :, :2] -= locs[:, :, :2] % patch_size
-    locs[:, :, 2:] += (patch_size - locs[:, :, 2:] % patch_size)
-    return locs
-
-
 class RefineBlock(nn.Module):
     def __init__(self, in_shape, out_shape, groups=1, expand=False, use_bn=False):
         super().__init__()
@@ -266,6 +259,121 @@ def get_readout_oper(vit_features, features, use_readout, start_index=1):
 
 
 class ReassembleBlock(nn.Module):
+    def __init__(self, num_patches, inp_dim, out_dim, readout, start_index=1):
+        self.reassembles = nn.ModuleList()
+
+        self.reassembles.append(
+            nn.Sequential(
+                readout_oper[0],
+                Transpose(1, 2),
+                nn.Unflatten(2, torch.Size([num_patches[0], num_patches[1]])),
+                nn.Conv2d(
+                    in_channels=inp_dim,
+                    out_channels=out_dim[0],
+                    kernel_size=1,
+                    stride=1,
+                    padding=0,
+                ),
+                nn.ConvTranspose2d(
+                    in_channels=out_dim[0],
+                    out_channels=out_dim[0],
+                    kernel_size=4,
+                    stride=4,
+                    padding=0,
+                    bias=True,
+                    dilation=1,
+                    groups=1,
+                ),
+            )
+        )
+
+        self.reassembles.append(
+            nn.Sequential(
+                readout_oper[1],
+                Transpose(1, 2),
+                nn.Unflatten(2, torch.Size([num_patches[0], num_patches[1]])),
+                nn.Conv2d(
+                    in_channels=inp_dim,
+                    out_channels=out_dim[1],
+                    kernel_size=1,
+                    stride=1,
+                    padding=0,
+                ),
+                nn.ConvTranspose2d(
+                    in_channels=out_dim[1],
+                    out_channels=out_dim[1],
+                    kernel_size=2,
+                    stride=2,
+                    padding=0,
+                    bias=True,
+                    dilation=1,
+                    groups=1,
+                ),
+            )
+        )            x = transformer(x)
+
+        self.reassembles.append(
+            nn.Sequential(
+                readout_oper[2],
+                Transpose(1, 2),
+                nn.Unflatten(2, torch.Size([num_patches[0], num_patches[1]])),
+                nn.Conv2d(
+                    in_channels=inp_dim,
+                    out_channels=out_dim[2],
+                    kernel_size=1,
+                    stride=1,
+                    padding=0,
+                ),
+                    results = []
+
+        for emb, reassemble in zip(embs, self.reassembles):
+            x = reassemble[0:2](emb)
+            if x.ndim == 3:
+                x = reassemble[2](x)
+            
+            x = reassemble[3:len(reassemble)](x)
+            results.append(x)
+
+        return result)
+        )
+
+        self.reassembles.append(
+            nn.Sequential(
+                readout_oper[3],
+                Transpose(1, 2),
+                nn.Unflatten(2, torch.Size([num_patches[0], num_patches[1]])),
+                nn.Conv2d(
+                    in_channels=inp_dim,
+                    out_channels=out_dim[3],
+                    kernel_size=1,
+                    stride=1,
+                    padding=0,
+                ),
+                nn.Conv2d(
+                    in_channels=out_dim[3],
+                    out_channels=out_dim[3],
+                    kernel_size=3,
+                    stride=2,
+                    padding=1,
+                ),
+            )
+        )
+
+    def forward(self, embs):
+        results = []
+
+        for emb, reassemble in zip(embs, self.reassembles):
+            x = reassemble[0:2](emb)
+            if x.ndim == 3:
+                x = reassemble[2](x)
+            
+            x = reassemble[3:len(reassemble)](x)
+            results.append(x)
+
+        return results
+
+
+class Interpolate(nn.Module):
     """Interpolation module."""
 
     def __init__(self, scale_factor, mode, align_corners=False):
@@ -276,7 +384,7 @@ class ReassembleBlock(nn.Module):
         """
         super(Interpolate, self).__init__()
 
-        self.interp = nn.functional.interpolate
+        self.interp = F.interpolate
         self.scale_factor = scale_factor
         self.mode = mode
         self.align_corners = align_corners
@@ -364,8 +472,6 @@ class ResidualConvUnit(nn.Module):
 
         return self.skip_add.add(out, x)
 
-        # return out + x
-
 
 class FeatureFusionBlock(nn.Module):
     """Feature fusion block."""
@@ -424,7 +530,7 @@ class FeatureFusionBlock(nn.Module):
 
         output = self.resConfUnit2(output)
 
-        output = nn.functional.interpolate(
+        output = F.interpolate(
             output, scale_factor=2, mode="bilinear", align_corners=self.align_corners
         )
 

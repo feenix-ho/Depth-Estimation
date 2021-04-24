@@ -1,8 +1,8 @@
 import torch
 from torch import nn
-from torch.nn import functional as F
 
 from einops import rearrange, repeat
+from einops.layers.torch import Rearrange
 from blocks import InjectionBlock, ScratchBlock, ReassembleBlock, RefineBlock
 from kornia import filters
 
@@ -23,13 +23,19 @@ class KnowledgeFusion(nn.Module):
             self.layers.append(InjectionBlock(
                 dims[idx], dims[idx], dims[idx + 1], max_patches, **kwargs))
 
+    def patching(self, locations, patch_size=16):
+        locs = locations
+        locs[:, :, :2] -= locs[:, :, :2] % patch_size
+        locs[:, :, 2:] += (patch_size - locs[:, :, 2:] % patch_size)
+        return locs
+
     def forward(self, patches, embs, locations):
         '''
-        Params:kwargs
+        Params:
         Return:
         '''
         b, n, _ = embs.shape
-        locs = patching(locations, patch_size=self.patch_size)
+        locs = self.patching(locations, patch_size=self.patch_size)
         masks = torch.zeros(patches.shape[:3], dtype=torch.bool)
 
         for loc in locs:
@@ -41,7 +47,7 @@ class KnowledgeFusion(nn.Module):
 
         for layer in self.layers:
             patches, embs = layer(patches, embs, masks)
-    def __init__(self, depth, hidden_dim, max_patches, hooks, readout, transformer, **kwargs):
+
         masks = rearrange(masks, '(b n) p -> b n p', n=n)
         result = (patches * masks).sum(dim=1) / masks.sum(dim=1)
         return result
