@@ -7,57 +7,99 @@ from einops.layers.torch import Rearrange
 
 from performer_pytorch import Performer
 
-def _make_scratch(in_shape, out_shape, groups=1, expand=False):
-    scratch = nn.Module()
 
-    out_shape1 = out_shape
-    out_shape2 = out_shape
-    out_shape3 = out_shape
-    out_shape4 = out_shape
-    if expand == True:
+def _make_fusion_block(features, use_bn):
+    return FeatureFusionBlock_custom(
+        features,
+        nn.ReLU(False),
+        deconv=False,
+        bn=use_bn,
+        expand=False,
+        align_corners=True,
+    )
+
+
+class RefineBlock(nn.Module):
+    def __init__(self, in_shape, out_shape, groups=1, expand=False, use_bn=False):
+        super().__init__()
+    
         out_shape1 = out_shape
-        out_shape2 = out_shape * 2
-        out_shape3 = out_shape * 4
-        out_shape4 = out_shape * 8
+        out_shape2 = out_shape
+        out_shape3 = out_shape
+        out_shape4 = out_shape
+        if expand == True:
+            out_shape1 = out_shape
+            out_shape2 = out_shape * 2
+            out_shape3 = out_shape * 4
+            out_shape4 = out_shape * 8
 
-    scratch.layer1_rn = nn.Conv2d(
-        in_shape[0],
-        out_shape1,
-        kernel_size=3,
-        stride=1,
-        padding=1,
-        bias=False,
-        groups=groups,
-    )
-    scratch.layer2_rn = nn.Conv2d(
-        in_shape[1],
-        out_shape2,
-        kernel_size=3,
-        stride=1,
-        padding=1,
-        bias=False,
-        groups=groups,
-    )
-    scratch.layer3_rn = nn.Conv2d(
-        in_shape[2],
-        out_shape3,
-        kernel_size=3,
-        stride=1,
-        padding=1,
-        bias=False,
-        groups=groups,
-    )
-    scratch.layer4_rn = nn.Conv2d(
-        in_shape[3],
-        out_shape4,
-        kernel_size=3,
-        stride=1,
-        padding=1,
-        bias=False,
-        groups=groups,
-    )
+        self.layers_rn = nn.ModuleList()
 
-    return scratch
+
+        self.layers_rn.append(
+            nn.Conv2d(
+                in_shape[0],
+                out_shape1,
+                kernel_size=3,
+                stride=1,
+                padding=1,
+                bias=False,
+                groups=groups,
+            )
+        )
+        self.layers_rn.append(
+            nn.Conv2d(
+                in_shape[1],
+                out_shape2,
+                kernel_size=3,
+                stride=1,
+                padding=1,
+                bias=False,
+                groups=groups,
+            )
+        )
+        self.layers_rn.append(
+            nn.Conv2d(
+                in_shape[2],
+                out_shape3,
+                kernel_size=3,
+                stride=1,
+                padding=1,
+                bias=False,
+                groups=groups,
+            )
+        )
+        self.layers_rn.append( 
+            nn.Conv2d(
+                in_shape[3],
+                out_shape4,
+                kernel_size=3,
+                stride=1,
+                padding=1,
+                bias=False,
+                groups=groups,
+            )
+        )
+
+        self.refinenets = nn.ModuleList()
+
+        for _ in range(4):
+            self.refinenets.append(_make_fusion_block(out_shape, use_bn))
+
+    def forward(self, embs):
+        y = None
+        results = []
+
+        for x, layer_rn in zip(embs, self.layers_rn):
+            results.append(layer_rn(x))
+
+        for result, refinenet in zip(results[::-1], self.refinenets):
+            if y is not None:
+                y = refinenet(y, result)
+            else:
+                y = refinenet(result)
+
+        return y
 
 
 def patching(locations, patch_size=16):
@@ -238,7 +280,7 @@ class KnowledgeFusion(nn.Module):
         return result
 
 
-class ViTBlock(nn.Module):
+class ScratchBlock(nn.Module):
     '''
         Descriptions:
         Params:
@@ -267,6 +309,7 @@ class ViTBlock(nn.Module):
 
         return result
 
+
 def get_readout_oper(vit_features, features, use_readout, start_index=1):
     if use_readout == "ignore":
         readout_oper = [Slice(start_index)] * len(features)
@@ -282,6 +325,7 @@ def get_readout_oper(vit_features, features, use_readout, start_index=1):
         ), "wrong operation for readout token, use_readout can be 'ignore', 'add', or 'project'"
 
     return readout_oper
+
 
 class ReassembleBlock(nn.Module):
     def __init__(self, num_patches, inp_dim, out_dim, readout, start_index=1):
@@ -349,7 +393,17 @@ class ReassembleBlock(nn.Module):
                     stride=1,
                     padding=0,
                 ),
-            )
+                    results = []
+
+        for emb, reassemble in zip(embs, self.reassembles):
+            x = reassemble[0:2](emb)
+            if x.ndim == 3:
+                x = reassemble[2](x)
+            
+            x = reassemble[3:len(reassemble)](x)
+            results.append(x)
+
+        return result)
         )
 
         self.reassembles.append(
@@ -385,7 +439,8 @@ class ReassembleBlock(nn.Module):
             x = reassemble[3:len(reassemble)](x)
             results.append(x)
 
-        return result
+        return results
+
 
 class Interpolate(nn.Module):
     """Interpolation module."""
@@ -486,7 +541,7 @@ class FeatureFusionBlock(nn.Module):
         )
 
         return output
-
+RefineBlock
 
 class ResidualConvUnit_custom(nn.Module):
     """Residual convolution module."""
@@ -620,3 +675,43 @@ class FeatureFusionBlock_custom(nn.Module):
         output = self.out_conv(output)
 
         return output
+
+
+class DensePrediction(nn.Module):
+    def __init__(
+
+    ):
+        super().__init__()
+        
+        self.scratch = ScratchBlock(
+            hidden_dim,
+            max_patches,
+            hooks,
+            readout,
+            transformer,
+            **kwargs
+        )
+
+        self.reassemble = ReassembleBlock(
+            num_patches, 
+            inp_dim, 
+            out_dim, 
+            readout, 
+            start_index=1
+        )
+
+        self.refine = RefineBlock(
+            in_shape,
+            out_shape,
+            groups=1,
+            expand=False,
+            use_bn=False
+        )
+
+    def forward(self, embs):
+        results = self.scratch(embs)
+        results = self.reassemble(results)
+        results = self.refine(results)
+        return results
+
+
