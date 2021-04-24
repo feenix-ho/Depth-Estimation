@@ -3,60 +3,81 @@ from torch import nn
 from torch.nn import functional as F
 
 from einops import rearrange, repeat
-from blocks import FusionBlock, KnowledgeFusion
+from blocks import InjectionBlock, ScratchBlock, ReassembleBlock, RefineBlock
 from kornia import filters
 
-def compute_ssi(self, preds, targets, masks, trimmed=1.):
-    masks = rearrange(masks, 'b h w -> b (h w)')
-    M = masks.sum(dim=1)
+class KnowledgeFusion(nn.Module):
+    '''
+    Description:
+    Params:
+    '''
 
-    errors = torch.abs(aligned_preds - aligned_targets)[masks]
-    trimmed_errors = torch.sort(errors, dim=1)
-    ssi_trim = []
+    def __init__(self, emb_size, dims, num_patches, channels=3, **kwargs):
+        super().__init__()
+        patch_dim = channels * patch_size ** 2
+        
+        self.layers = [InjectionBlock(
+            emb_size, patch_dim, dims[0], max_patches, **kwargs)]
 
-    for i in range(M.shape[0]):
-        cutoff = trimmed * M[i]
-        error = trimmed_errors[i][masks[i]]
-        trimmed_error = error[:cutoff].sum()
-        ssi_trim.append(trimmed_error / M[i])
+        for idx in range(len(dims) - 1):
+            self.layers.append(InjectionBlock(
+                dims[idx], dims[idx], dims[idx + 1], max_patches, **kwargs))
 
-    return torch.cat(ssi_trim)
+    def forward(self, patches, embs, locations):
+        '''
+        Params:kwargs
+        Return:
+        '''
+        b, n, _ = embs.shape
+        locs = patching(locations, patch_size=self.patch_size)
+        masks = torch.zeros(patches.shape[:3], dtype=torch.bool)
 
-def compute_reg(self, preds, targets, masks, num_scale=4):
-    def compute_grad(preds, targets, masks):
-        diff = repeat(preds - targets, 'b h w -> b c h w', c=1)
-        grads = filters.spatial_gradient(diff)
-        abs_grads = torch.abs(grads[:, 0, 0]) + torch.abs(grads[:, 0, 1])
-        sum_grads = torch.sum(abs_grads * masks, (1, 2))
-        return sum_grads / masks.sum((1, 2))
+        for loc in locs:
+            for obj_loc in loc:
+                masks[:, obj_loc[0]:obj_loc[2], obj_loc[1]:obj_loc[3]] = True
 
-    total = 0
-    step = 1
+        masks = rearrange(masks, 'b n h w -> (b n) (h w)')
+        patches = repeat(patches, 'b h w d -> b n (h w) d', n=n)
 
-    for scale in range(num_scale):
-        total += compute_grad(preds[:, ::step, ::step],
-                                targets[:, ::step, ::step], masks[:, ::step, ::step])
-        step *= 2
+        for layer in self.layers:
+            patches, embs = layer(patches, embs, masks)
+    def __init__(self, depth, hidden_dim, max_patches, hooks, readout, transformer, **kwargs):
+        masks = rearrange(masks, '(b n) p -> b n p', n=n)
+        result = (patches * masks).sum(dim=1) / masks.sum(dim=1)
+        return result
 
-    return total
+class DensePrediction(nn.Module):
+    def __init__(
+        inp_dim,
+        hidden_dims,
+        out_dim,
+        **kwargs
+    ):
+        super().__init__()
+        
+        self.scratch = ScratchBlock(
+            hidden_dim=inp_dim,
+            **kwargs
+        )
 
-def compute_loss(self, trimmed=1., num_scale=4, alpha=.5, **kwagrs):
-    def align(imgs, masks):
-        imgs = rearrange(imgs, 'b h w -> b (h w)')
+        self.reassemble = ReassembleBlock(
+            inp_dim=inp_dim, 
+            out_dim=hidden_dims,
+            **kwargs
+        )
 
-        t = imgs.median(dim=1)
-        s = masks * torch.abs(imgs - t)
-        s = s.sum(dim=1) / masks.sum(dim=1)
+        self.refine = RefineBlock(
+            in_shape=hidden_dims,
+            out_shape=out_dim,
+            **kwargs
+        )
 
-        return (imgs - t) / s
-
-    aligned_preds = align(preds, masks)
-    aligned_targets = align(targets, masks)
-
-    loss = compute_ssi(trimmed=trimmed, **kwargs)
-    if alpha > 0.:
-        loss += alpha * compute_reg(num_scale=num_scale, **kwargs)
-    return loss.mean(dim=0)
+    def forward(self, embs):
+        results = self.scratch(embs)
+        results = self.reassemble(results)
+        results = self.refine(results)
+        
+        return results
 
 
 class RDNet(nn.Module):

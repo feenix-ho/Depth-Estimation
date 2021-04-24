@@ -5,18 +5,12 @@ from torch.nn import functional as F
 from einops import rearrange, repeat
 from einops.layers.torch import Rearrange
 
-from performer_pytorch import Performer
 
-
-def _make_fusion_block(features, use_bn):
-    return FeatureFusionBlock_custom(
-        features,
-        nn.ReLU(False),
-        deconv=False,
-        bn=use_bn,
-        expand=False,
-        align_corners=True,
-    )
+def patching(locations, patch_size=16):
+    locs = locations
+    locs[:, :, :2] -= locs[:, :, :2] % patch_size
+    locs[:, :, 2:] += (patch_size - locs[:, :, 2:] % patch_size)
+    return locs
 
 
 class RefineBlock(nn.Module):
@@ -100,13 +94,6 @@ class RefineBlock(nn.Module):
                 y = refinenet(result)
 
         return y
-
-
-def patching(locations, patch_size=16):
-    locs = locations
-    locs[:, :, :2] -= locs[:, :, :2] % patch_size
-    locs[:, :, 2:] += (patch_size - locs[:, :, 2:] % patch_size)
-    return locs
 
 
 class Slice(nn.Module):
@@ -231,48 +218,6 @@ class InjectionBlock(nn.Module):
         return y, x
 
 
-class KnowledgeFusion(nn.Module):
-    '''
-    Description:
-    Params:
-
-    '''
-
-    def __init__(self, emb_size, dims, num_patches, channels=3, **kwargs):
-        super().__init__()
-        patch_dim = channels * patch_size ** 2
-        
-        self.layers = [InjectionBlock(
-            emb_size, patch_dim, dims[0], max_patches, **kwargs)]
-
-        for idx in range(len(dims) - 1):
-            self.layers.append(InjectionBlock(
-                dims[idx], dims[idx], dims[idx + 1], max_patches, **kwargs))
-
-    def forward(self, patches, embs, locations):
-        '''
-        Params:kwargs
-        Return:
-        '''
-        b, n, _ = embs.shape
-        locs = patching(locations, patch_size=self.patch_size)
-        masks = torch.zeros(patches.shape[:3], dtype=torch.bool)
-
-        for loc in locs:
-            for obj_loc in loc:
-                masks[:, obj_loc[0]:obj_loc[2], obj_loc[1]:obj_loc[3]] = True
-
-        masks = rearrange(masks, 'b n h w -> (b n) (h w)')
-        patches = repeat(patches, 'b h w d -> b n (h w) d', n=n)
-
-        for layer in self.layers:
-            patches, embs = layer(patches, embs, masks)
-    def __init__(self, depth, hidden_dim, max_patches, hooks, readout, transformer, **kwargs):
-        masks = rearrange(masks, '(b n) p -> b n p', n=n)
-        result = (patches * masks).sum(dim=1) / masks.sum(dim=1)
-        return result
-
-
 class ScratchBlock(nn.Module):
     '''
         Descriptions:
@@ -320,7 +265,7 @@ def get_readout_oper(vit_features, features, use_readout, start_index=1):
     return readout_oper
 
 
-class ReassembleBlock(nn.Module):max_patches=max_patches,
+class ReassembleBlock(nn.Module):
     """Interpolation module."""
 
     def __init__(self, scale_factor, mode, align_corners=False):
@@ -355,73 +300,6 @@ class ReassembleBlock(nn.Module):max_patches=max_patches,
 
 
 class ResidualConvUnit(nn.Module):
-    """Residual convolution module."""
-
-    def __init__(self, features):
-        """Init.
-        Args:
-            features (int): number of features
-        """
-        super().__init__()
-
-        self.conv1 = nn.Conv2d(
-            features, features, kernel_size=3, stride=1, padding=1, bias=True
-        )
-
-        self.conv2 = nn.Conv2d(
-            features, features, kernel_size=3, stride=1, padding=1, bias=True
-        )
-
-        self.relu = nn.ReLU(inplace=True)
-
-    def forward(self, x):
-        """Forward pass.
-        Args:
-            x (tensor): input
-        Returns:
-            tensor: output
-        """
-        out = self.relu(x)
-        out = self.conv1(out)
-        out = self.relu(out)
-        out = self.conv2(out)
-
-        return out + x
-
-
-class FeatureFusionBlock(nn.Module):
-    """Feature fusion block."""
-
-    def __init__(self, features):
-        """Init.
-        Args:
-            features (int): number of features
-        """
-        super(FeatureFusionBlock, self).__init__()
-
-        self.resConfUnit1 = ResidualConvUnit(features)
-        self.resConfUnit2 = ResidualConvUnit(features)
-
-    def forward(self, *xs):
-        """Forward pass.
-        Returns:
-            tensor: output
-        """
-        output = xs[0]
-
-        if len(xs) == 2:
-            output += self.resConfUnit1(xs[1])
-
-        output = self.resConfUnit2(output)
-
-        output = nn.functional.interpolate(
-            output, scale_factor=2, mode="bilinear", align_corners=True
-        )
-
-        return output
-RefineBlock
-
-class ResidualConvUnit_custom(nn.Module):
     """Residual convolution module."""
 
     def __init__(self, features, activation, bn):
@@ -489,7 +367,7 @@ class ResidualConvUnit_custom(nn.Module):
         # return out + x
 
 
-class FeatureFusionBlock_custom(nn.Module):
+class FeatureFusionBlock(nn.Module):
     """Feature fusion block."""
 
     def __init__(
@@ -505,7 +383,7 @@ class FeatureFusionBlock_custom(nn.Module):
         Args:
             features (int): number of features
         """
-        super(FeatureFusionBlock_custom, self).__init__()
+        super(FeatureFusionBlock, self).__init__()
 
         self.deconv = deconv
         self.align_corners = align_corners
@@ -527,8 +405,8 @@ class FeatureFusionBlock_custom(nn.Module):
             groups=1,
         )
 
-        self.resConfUnit1 = ResidualConvUnit_custom(features, activation, bn)
-        self.resConfUnit2 = ResidualConvUnit_custom(features, activation, bn)
+        self.resConfUnit1 = ResidualConvUnit(features, activation, bn)
+        self.resConfUnit2 = ResidualConvUnit(features, activation, bn)
 
         self.skip_add = nn.quantized.FloatFunctional()
 
@@ -553,39 +431,3 @@ class FeatureFusionBlock_custom(nn.Module):
         output = self.out_conv(output)
 
         return output
-
-
-class DensePrediction(nn.Module):
-    def __init__(
-        inp_dim,
-        hidden_dims,
-        out_dim,
-        **kwargs
-    ):
-        super().__init__()
-        
-        self.scratch = ScratchBlock(
-            hidden_dim=inp_dim,
-            **kwargs
-        )
-
-        self.reassemble = ReassembleBlock(
-            inp_dim=inp_dim, 
-            out_dim=hidden_dims,
-            **kwargs
-        )
-
-        self.refine = RefineBlock(
-            in_shape=hidden_dims,
-            out_shape=out_dim,
-            **kwargs
-        )
-
-    def forward(self, embs):
-        results = self.scratch(embs)
-        results = self.reassemble(results)
-        results = self.refine(results)
-        
-        return results
-
-
