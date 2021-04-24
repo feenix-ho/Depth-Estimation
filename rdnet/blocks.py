@@ -238,15 +238,10 @@ class KnowledgeFusion(nn.Module):
 
     '''
 
-    def __init__(self, *, image_size, emb_size, dims, channels=3, patch_size=16, **kwargs):
+    def __init__(self, emb_size, dims, num_patches, channels=3, **kwargs):
         super().__init__()
-        self.patch_size = patch_size
-        num_patches = (image_size[0] / patch_size, image_size[1] / patch_size)
-        max_patches = num_patches[0] * num_patches[1]
         patch_dim = channels * patch_size ** 2
-
-        self.to_patch = Rearrange('b c (h p1) (w p2) -> b h w (p1 p2 c)',
-                                  p1=num_patches[0], p2=num_patches[1])
+        
         self.layers = [InjectionBlock(
             emb_size, patch_dim, dims[0], max_patches, **kwargs)]
 
@@ -254,14 +249,13 @@ class KnowledgeFusion(nn.Module):
             self.layers.append(InjectionBlock(
                 dims[idx], dims[idx], dims[idx + 1], max_patches, **kwargs))
 
-    def forward(self, imgs, locations, embs):
+    def forward(self, patches, embs, locations):
         '''
         Params:kwargs
         Return:
         '''
         b, n, _ = embs.shape
         locs = patching(locations, patch_size=self.patch_size)
-        patches = self.to_patch(imgs)
         masks = torch.zeros(patches.shape[:3], dtype=torch.bool)
 
         for loc in locs:
@@ -274,7 +268,6 @@ class KnowledgeFusion(nn.Module):
         for layer in self.layers:
             patches, embs = layer(patches, embs, masks)
     def __init__(self, depth, hidden_dim, max_patches, hooks, readout, transformer, **kwargs):
-
         masks = rearrange(masks, '(b n) p -> b n p', n=n)
         result = (patches * masks).sum(dim=1) / masks.sum(dim=1)
         return result
@@ -327,122 +320,7 @@ def get_readout_oper(vit_features, features, use_readout, start_index=1):
     return readout_oper
 
 
-class ReassembleBlock(nn.Module):
-    def __init__(self, num_patches, inp_dim, out_dim, readout, start_index=1):
-        self.reassembles = nn.ModuleList()
-
-        self.reassembles.append(
-            nn.Sequential(
-                readout_oper[0],
-                Transpose(1, 2),
-                nn.Unflatten(2, torch.Size([num_patches[0], num_patches[1]])),
-                nn.Conv2d(
-                    in_channels=inp_dim,
-                    out_channels=out_dim[0],
-                    kernel_size=1,
-                    stride=1,
-                    padding=0,
-                ),
-                nn.ConvTranspose2d(
-                    in_channels=out_dim[0],
-                    out_channels=out_dim[0],
-                    kernel_size=4,
-                    stride=4,
-                    padding=0,
-                    bias=True,
-                    dilation=1,
-                    groups=1,
-                ),
-            )
-        )
-
-        self.reassembles.append(
-            nn.Sequential(
-                readout_oper[1],
-                Transpose(1, 2),
-                nn.Unflatten(2, torch.Size([num_patches[0], num_patches[1]])),
-                nn.Conv2d(
-                    in_channels=inp_dim,
-                    out_channels=out_dim[1],
-                    kernel_size=1,
-                    stride=1,
-                    padding=0,
-                ),
-                nn.ConvTranspose2d(
-                    in_channels=out_dim[1],
-                    out_channels=out_dim[1],
-                    kernel_size=2,
-                    stride=2,
-                    padding=0,
-                    bias=True,
-                    dilation=1,
-                    groups=1,
-                ),
-            )
-        )            x = transformer(x)
-
-        self.reassembles.append(
-            nn.Sequential(
-                readout_oper[2],
-                Transpose(1, 2),
-                nn.Unflatten(2, torch.Size([num_patches[0], num_patches[1]])),
-                nn.Conv2d(
-                    in_channels=inp_dim,
-                    out_channels=out_dim[2],
-                    kernel_size=1,
-                    stride=1,
-                    padding=0,
-                ),
-                    results = []
-
-        for emb, reassemble in zip(embs, self.reassembles):
-            x = reassemble[0:2](emb)
-            if x.ndim == 3:
-                x = reassemble[2](x)
-            
-            x = reassemble[3:len(reassemble)](x)
-            results.append(x)
-
-        return result)
-        )
-
-        self.reassembles.append(
-            nn.Sequential(
-                readout_oper[3],
-                Transpose(1, 2),
-                nn.Unflatten(2, torch.Size([num_patches[0], num_patches[1]])),
-                nn.Conv2d(
-                    in_channels=inp_dim,
-                    out_channels=out_dim[3],
-                    kernel_size=1,
-                    stride=1,
-                    padding=0,
-                ),
-                nn.Conv2d(
-                    in_channels=out_dim[3],
-                    out_channels=out_dim[3],
-                    kernel_size=3,
-                    stride=2,
-                    padding=1,
-                ),
-            )
-        )
-
-    def forward(self, embs):
-        results = []
-
-        for emb, reassemble in zip(embs, self.reassembles):
-            x = reassemble[0:2](emb)
-            if x.ndim == 3:
-                x = reassemble[2](x)
-            
-            x = reassemble[3:len(reassemble)](x)
-            results.append(x)
-
-        return results
-
-
-class Interpolate(nn.Module):
+class ReassembleBlock(nn.Module):max_patches=max_patches,
     """Interpolation module."""
 
     def __init__(self, scale_factor, mode, align_corners=False):
@@ -679,39 +557,35 @@ class FeatureFusionBlock_custom(nn.Module):
 
 class DensePrediction(nn.Module):
     def __init__(
-
+        inp_dim,
+        hidden_dims,
+        out_dim,
+        **kwargs
     ):
         super().__init__()
         
         self.scratch = ScratchBlock(
-            hidden_dim,
-            max_patches,
-            hooks,
-            readout,
-            transformer,
+            hidden_dim=inp_dim,
             **kwargs
         )
 
         self.reassemble = ReassembleBlock(
-            num_patches, 
-            inp_dim, 
-            out_dim, 
-            readout, 
-            start_index=1
+            inp_dim=inp_dim, 
+            out_dim=hidden_dims,
+            **kwargs
         )
 
         self.refine = RefineBlock(
-            in_shape,
-            out_shape,
-            groups=1,
-            expand=False,
-            use_bn=False
+            in_shape=hidden_dims,
+            out_shape=out_dim,
+            **kwargs
         )
 
     def forward(self, embs):
         results = self.scratch(embs)
         results = self.reassemble(results)
         results = self.refine(results)
+        
         return results
 
 
