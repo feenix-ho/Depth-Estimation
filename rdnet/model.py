@@ -93,6 +93,7 @@ class RDNet(nn.Module):
     '''
 
     def __init__(self, image_size, patch_size, knowledge_dims, dense_dims, latent_dim, **kwargs):
+        super().__init__()
         self.patch_size = patch_size
         num_patches = (image_size[0] / patch_size, image_size[1] / patch_size)
         max_patches = num_patches[0] * num_patches[1]
