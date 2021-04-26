@@ -49,6 +49,9 @@ class Arg_train:
         self.data_path = config['DEFAULT']['data_path']
         self.image_height = int(config['DEFAULT']['image_height'])  # 480
         self.image_width = int(config['DEFAULT']['image_width'])  # 640
+        self.image_size = []
+        self.image_size.append(self.image_height)
+        self.image_size.append(self.image_width)
         self.patch_size = int(config['DEFAULT']['patch_size'])  # 32
         self.knowledge_dims = list(
             map(int, config['DEFAULT']['knowledge_dims'].split(',')))  # 4096, 2048, 1024
@@ -65,13 +68,12 @@ class Arg_train:
         self.weight_decay = float(config['DEFAULT']['weight_decay'])  # 1e-2
         self.adam_eps = float(config['DEFAULT']['adam_eps'])  # 1e-3
         self.num_threads = int(config['DEFAULT']['num_threads'])  # 1
-        self.data_path_eval = None
+        self.data_path_eval = ''
         self.mode = 'train'
-        self.checkpoint_path = None
+        self.checkpoint_path = ''
         self.fix_first_conv_blocks = True
         self.fix_first_conv_block = True
         self.bn_no_track_stats = True
-        self.weight_decay = float(config['DEFAULT']['weight_decay'])  # 1e-2
         self.bts_size = int(config['DEFAULT']['bts_size'])  # 512
         self.retrain = True
         self.end_learning_rate = -1
@@ -79,6 +81,8 @@ class Arg_train:
             config['DEFAULT']['variance_focus'])  # 0.85
         self.model_name = 'RDnet'
         self.gpu = 0
+        self.log_directory = ''
+        self.do_online_eval = False
 
 
 args = Arg_train()
@@ -300,7 +304,24 @@ def main_worker(gpu, ngpus_per_node, args):
         print("Use GPU: {} for training".format(args.gpu))
 
     # Create model
-    model = RDNet(args)
+    model = RDNet(image_size=args.image_size,
+                  patch_size=args.patch_size,
+                  knowledge_dims=args.knowledge_dims,
+                  dense_dims=args.dense_dims,
+                  latent_dim=args.latent_dims,
+                  data_path=args.data_path,
+                  emb_size=args.emb_size,
+                  readout=args.readout,
+                  hooks=args.hooks,
+                  batch_size=args.batch_size,
+                  num_epochs=args.num_epochs,
+                  learning_rate=args.learning_rate,
+                  weight_decay=args.weight_decay,
+                  adam_eps=args.adam_eps,
+                  num_threads=args.num_threads,
+                  bts_size=args.bts_size,
+                  end_learning_rate=args.end_learning_rate,
+                  variance_focus=args.variance_focus)
     model.train()
     model.decoder.apply(weights_init_xavier)
     set_misc(model)
