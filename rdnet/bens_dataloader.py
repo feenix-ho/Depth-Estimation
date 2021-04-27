@@ -186,7 +186,7 @@ class DataLoadPreprocess(Dataset):
             image, depth_gt = self.train_preprocess(image, depth_gt)
             sample = {'image': image, 'depth': depth_gt,
                       'focal': focal, 'embedding': embedding,
-                      'bbox': bbox, 'cropped_img': cropped_image}
+                      'bbox': bbox, 'cropped_image': cropped_image}
 
         else:
             if self.mode == 'online_eval':
@@ -299,6 +299,8 @@ class ToTensor(object):
 
     def __call__(self, sample):
         image, focal = sample['image'], sample['focal']
+        embedding, bbox = sample['embedding'], sample['bbox']
+        cropped_image = sample['embedding']
         image = self.to_tensor(image)
         image = self.normalize(image)
 
@@ -308,7 +310,10 @@ class ToTensor(object):
         depth = sample['depth']
         if self.mode == 'train':
             depth = self.to_tensor(depth)
-            return {'image': image, 'depth': depth, 'focal': focal}
+            embedding = self.to_tensor(embedding)
+            bbox = self.to_tensor(bbox)
+            return {'image': image, 'depth': depth, 'focal': focal, 'embedding': embedding,
+                    'bbox': bbox, 'cropped_image': cropped_image}
         else:
             has_valid_depth = sample['has_valid_depth']
             return {'image': image, 'depth': depth, 'focal': focal, 'has_valid_depth': has_valid_depth}
