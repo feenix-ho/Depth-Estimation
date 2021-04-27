@@ -41,7 +41,8 @@ class KnowledgeFusion(nn.Module):
 
         for idx, loc in enumerate(locs):
             for jdx, obj_loc in enumerate(loc):
-                masks[idx, jdx, obj_loc[0]:obj_loc[2], obj_loc[1]:obj_loc[3]] = True
+                masks[idx, jdx, obj_loc[0]:obj_loc[2],
+                      obj_loc[1]:obj_loc[3]] = True
 
         masks = rearrange(masks, 'b n h w -> (b n) (h w)')
         patches = repeat(patches, 'b h w d -> b n (h w) d', n=n)
@@ -107,6 +108,7 @@ class RDNet(nn.Module):
             dims=knowledge_dims,
             max_patches=max_patches,
             patch_dim=patch_dim,
+            patch_size=patch_size,
             **kwargs
         )
         self.dense = DensePrediction(
