@@ -261,9 +261,10 @@ def get_readout_oper(vit_features, features, use_readout, start_index=1):
 
 
 class ReassembleBlock(nn.Module):
-    def __init__(self, num_patches, inp_dim, out_dims, readout, start_index=1):
+    def __init__(self, num_patches, inp_dim, out_dims, readout, start_index=1, **kwargs):
         self.reassembles = nn.ModuleList()
-        readout_oper = get_readout_oper(vit_features=inp_dim, features=out_dims, use_readout=readout)
+        readout_oper = get_readout_oper(
+            vit_features=inp_dim, features=out_dims, use_readout=readout)
 
         self.reassembles.append(
             nn.Sequential(
