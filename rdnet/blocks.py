@@ -17,88 +17,6 @@ def _make_fusion_block(features, use_bn):
     )
 
 
-class RefineBlock(nn.Module):
-    def __init__(self, in_shape, out_shape, groups=1, expand=False, use_bn=False, **kwargs):
-        super().__init__()
-
-        out_shape1 = out_shape
-        out_shape2 = out_shape
-        out_shape3 = out_shape
-        out_shape4 = out_shape
-        if expand == True:
-            out_shape1 = out_shape
-            out_shape2 = out_shape * 2
-            out_shape3 = out_shape * 4
-            out_shape4 = out_shape * 8
-
-        self.layers_rn = nn.ModuleList()
-
-        self.layers_rn.append(
-            nn.Conv2d(
-                in_shape[0],
-                out_shape1,
-                kernel_size=3,
-                stride=1,
-                padding=1,
-                bias=False,
-                groups=groups,
-            )
-        )
-        self.layers_rn.append(
-            nn.Conv2d(
-                in_shape[1],
-                out_shape2,
-                kernel_size=3,
-                stride=1,
-                padding=1,
-                bias=False,
-                groups=groups,
-            )
-        )
-        self.layers_rn.append(
-            nn.Conv2d(
-                in_shape[2],
-                out_shape3,
-                kernel_size=3,
-                stride=1,
-                padding=1,
-                bias=False,
-                groups=groups,
-            )
-        )
-        self.layers_rn.append(
-            nn.Conv2d(
-                in_shape[3],
-                out_shape4,
-                kernel_size=3,
-                stride=1,
-                padding=1,
-                bias=False,
-                groups=groups,
-            )
-        )
-
-        self.refinenets = nn.ModuleList()
-
-        for _ in range(4):
-            self.refinenets.append(_make_fusion_block(out_shape, use_bn))
-
-    def forward(self, embs):
-        y = None
-        results = []
-
-        for x, layer_rn in zip(embs, self.layers_rn):
-            results.append(layer_rn(x))
-
-        for result, refinenet in zip(results[::-1], self.refinenets):
-            if y is not None:
-                y = refinenet(y, result)
-            else:
-                y = refinenet(result)
-
-        return y
-
-
 class Slice(nn.Module):
     def __init__(self, start_index=1):
         super(Slice, self).__init__()
@@ -136,6 +54,22 @@ class ProjectReadout(nn.Module):
         return self.project(features)
 
 
+def get_readout_oper(inp_dim, out_dims, use_readout, start_index=1, **kwargs):
+    if use_readout == "ignore":
+        readout_oper = [Slice(start_index)] * len(out_dims)
+    elif use_readout == "add":
+        readout_oper = [AddReadout(start_index)] * len(out_dims)
+    elif use_readout == "project":
+        readout_oper = [
+            ProjectReadout(inp_dim, start_index) for dim in out_dims
+        ]
+    else:
+        assert (
+            False
+        ), "wrong operation for readout token, use_readout can be 'ignore', 'add', or 'project'"
+
+    return readout_oper
+
 class Transpose(nn.Module):
     def __init__(self, dim0, dim1):
         super(Transpose, self).__init__()
@@ -165,7 +99,7 @@ class InjectionBlock(nn.Module):
 
     def __init__(self, emb_size, inp_dim, out_dim, max_patches, use_readout, transformer, **kwargs):
         super().__init__()
-        self.readout = use_readout
+        self.readout = get_readout_oper(inp_dim=out_dim, out_dims=[out_dim], use_readout=use_readout, **kwargs)
         self.rel_trans = nn.Sequential(nn.Linear(emb_size, out_dim),
                                        transformer(dim=out_dim, depth=1))
 
@@ -176,18 +110,6 @@ class InjectionBlock(nn.Module):
 
         self.transformer = transformer(
             dim=out_dim, depth=1)
-        self.project = nn.Sequential(
-            nn.Linear(2 * out_dim, out_dim), nn.GELU())
-
-    def get_readout(patches):
-        if "ignore" in self.readout:
-            return patches[:, 1:]
-        elif "add" in self.readout:
-            return patches[:, 1:] + patches[:, 0].unsqueeze(1)
-        else:
-            readout = patches[:, 0].unsqueeze(1).expand_as(patches[:, 1:])
-            features = torch.cat((patches[:, 1:], readout), -1)
-            return self.project(features)
 
     def forward(self, imgs, embs, masks):
         '''
@@ -215,7 +137,7 @@ class InjectionBlock(nn.Module):
         y += self.pos_emb[:, :(p + 1)]
 
         y = self.transformer(y, masks=masks)
-        y = self.get_readout(y)
+        y = self.readout[0](y)
         x = y.mean(dim=1)
         x = rearrange(x, '(b n) d -> b n d', n=n)
         y = rearrange(y, '(b n) p d -> b n p d', n=n)
@@ -252,24 +174,6 @@ class ScratchBlock(nn.Module):
             results.append(t)
 
         return result
-
-
-def get_readout_oper(vit_features, features, use_readout, start_index=1, **kwargs):
-    if use_readout == "ignore":
-        readout_oper = [Slice(start_index)] * len(features)
-    elif use_readout == "add":
-        readout_oper = [AddReadout(start_index)] * len(features)
-    elif use_readout == "project":
-        readout_oper = [
-            ProjectReadout(vit_features, start_index) for out_feat in features
-        ]
-    else:
-        assert (
-            False
-        ), "wrong operation for readout token, use_readout can be 'ignore', 'add', or 'project'"
-
-    return readout_oper
-
 
 class ReassembleBlock(nn.Module):
     def __init__(self, num_patches, inp_dim, out_dims, start_index=1, **kwargs):
@@ -381,6 +285,88 @@ class ReassembleBlock(nn.Module):
             results.append(x)
 
         return results
+
+
+class RefineBlock(nn.Module):
+    def __init__(self, in_shape, out_shape, groups=1, expand=False, use_bn=False, **kwargs):
+        super().__init__()
+
+        out_shape1 = out_shape
+        out_shape2 = out_shape
+        out_shape3 = out_shape
+        out_shape4 = out_shape
+        if expand == True:
+            out_shape1 = out_shape
+            out_shape2 = out_shape * 2
+            out_shape3 = out_shape * 4
+            out_shape4 = out_shape * 8
+
+        self.layers_rn = nn.ModuleList()
+
+        self.layers_rn.append(
+            nn.Conv2d(
+                in_shape[0],
+                out_shape1,
+                kernel_size=3,
+                stride=1,
+                padding=1,
+                bias=False,
+                groups=groups,
+            )
+        )
+        self.layers_rn.append(
+            nn.Conv2d(
+                in_shape[1],
+                out_shape2,
+                kernel_size=3,
+                stride=1,
+                padding=1,
+                bias=False,
+                groups=groups,
+            )
+        )
+        self.layers_rn.append(
+            nn.Conv2d(
+                in_shape[2],
+                out_shape3,
+                kernel_size=3,
+                stride=1,
+                padding=1,
+                bias=False,
+                groups=groups,
+            )
+        )
+        self.layers_rn.append(
+            nn.Conv2d(
+                in_shape[3],
+                out_shape4,
+                kernel_size=3,
+                stride=1,
+                padding=1,
+                bias=False,
+                groups=groups,
+            )
+        )
+
+        self.refinenets = nn.ModuleList()
+
+        for _ in range(4):
+            self.refinenets.append(_make_fusion_block(out_shape, use_bn))
+
+    def forward(self, embs):
+        y = None
+        results = []
+
+        for x, layer_rn in zip(embs, self.layers_rn):
+            results.append(layer_rn(x))
+
+        for result, refinenet in zip(results[::-1], self.refinenets):
+            if y is not None:
+                y = refinenet(y, result)
+            else:
+                y = refinenet(result)
+
+        return y
 
 
 class Interpolate(nn.Module):

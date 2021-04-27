@@ -13,9 +13,9 @@ class KnowledgeFusion(nn.Module):
     Params:
     '''
 
-    def __init__(self, emb_size, dims, max_patches, patch_dim, **kwargs):
+    def __init__(self, emb_size, dims, max_patches, patch_dim, patch_size, **kwargs):
         super().__init__()
-        self.patch_size = kwargs['patch_size']
+        self.patch_size = patch_size
         self.layers = [InjectionBlock(
             emb_size, patch_dim, dims[0], max_patches, **kwargs)]
 
@@ -23,7 +23,7 @@ class KnowledgeFusion(nn.Module):
             self.layers.append(InjectionBlock(
                 dims[idx], dims[idx], dims[idx + 1], max_patches, **kwargs))
 
-    def patching(self, locations, patch_size=16):
+    def patching(self, locations, patch_size=self.patch_size):
         locs = locations
         locs[:, :, :2] -= locs[:, :, :2] % patch_size
         locs[:, :, 2:] += (patch_size - locs[:, :, 2:] % patch_size)
