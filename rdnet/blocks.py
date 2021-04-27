@@ -9,7 +9,7 @@ from einops.layers.torch import Rearrange
 class RefineBlock(nn.Module):
     def __init__(self, in_shape, out_shape, groups=1, expand=False, use_bn=False):
         super().__init__()
-    
+
         out_shape1 = out_shape
         out_shape2 = out_shape
         out_shape3 = out_shape
@@ -21,7 +21,6 @@ class RefineBlock(nn.Module):
             out_shape4 = out_shape * 8
 
         self.layers_rn = nn.ModuleList()
-
 
         self.layers_rn.append(
             nn.Conv2d(
@@ -56,7 +55,7 @@ class RefineBlock(nn.Module):
                 groups=groups,
             )
         )
-        self.layers_rn.append( 
+        self.layers_rn.append(
             nn.Conv2d(
                 in_shape[3],
                 out_shape4,
@@ -95,7 +94,7 @@ class Slice(nn.Module):
         self.start_index = start_index
 
     def forward(self, x):
-        return x[:, self.start_index :]
+        return x[:, self.start_index:]
 
 
 class AddReadout(nn.Module):
@@ -108,7 +107,7 @@ class AddReadout(nn.Module):
             readout = (x[:, 0] + x[:, 1]) / 2
         else:
             readout = x[:, 0]
-        return x[:, self.start_index :] + readout.unsqueeze(1)
+        return x[:, self.start_index:] + readout.unsqueeze(1)
 
 
 class ProjectReadout(nn.Module):
@@ -116,11 +115,12 @@ class ProjectReadout(nn.Module):
         super(ProjectReadout, self).__init__()
         self.start_index = start_index
 
-        self.project = nn.Sequential(nn.Linear(2 * in_features, in_features), nn.GELU())
+        self.project = nn.Sequential(
+            nn.Linear(2 * in_features, in_features), nn.GELU())
 
     def forward(self, x):
-        readout = x[:, 0].unsqueeze(1).expand_as(x[:, self.start_index :])
-        features = torch.cat((x[:, self.start_index :], readout), -1)
+        readout = x[:, 0].unsqueeze(1).expand_as(x[:, self.start_index:])
+        features = torch.cat((x[:, self.start_index:], readout), -1)
 
         return self.project(features)
 
@@ -156,10 +156,11 @@ class InjectionBlock(nn.Module):
         super().__init__()
         self.readout = readout
         self.rel_trans = nn.Sequential(nn.Linear(emb_size, out_dim),
-                                        transformer(dim=out_dim, depth=1))
+                                       transformer(dim=out_dim, depth=1))
 
         self.proj = nn.Linear(inp_dim, out_dim)
-        self.pos_emb = nn.Parameter(torch.randn(1, int(max_patches) + 1, out_dim))
+        self.pos_emb = nn.Parameter(
+            torch.randn(1, int(max_patches) + 1, out_dim))
         self.cls_token = nn.Parameter(torch.randn(1, 1, out_dim))
 
         self.transformer = transformer(
@@ -219,15 +220,16 @@ class ScratchBlock(nn.Module):
 
     def __init__(self, hidden_dim, max_patches, hooks, readout, transformer, **kwargs):
         super().__init__()
-
-        self.pos_emb = nn.Parameter(torch.randn(1, max_patches + 1, hidden_dim))
+        self.pos_emb = nn.Parameter(torch.randn(
+            1, int(max_patches) + 1, hidden_dim))
         self.cls_token = nn.Parameter(torch.randn(1, 1, hidden_dim))
-        
+
         self.transformers = nn.ModuleList()
 
         pre = 0
         for cur in hooks:
-            self.transformers.append(transformer(dim = hidden_dim, depth = cur - pre))
+            self.transformers.append(transformer(
+                dim=hidden_dim, depth=cur - pre))
             pre = cur
 
     def forward(self, embs):
@@ -259,7 +261,7 @@ def get_readout_oper(vit_features, features, use_readout, start_index=1):
 
 
 class ReassembleBlock(nn.Module):
-    def __init__(self, num_patches, inp_dim, out_dim, readout, start_index=1):
+    def __init__(self, num_patches, inp_dim, out_dim, readout, start_index=1, **kwargs):
         self.reassembles = nn.ModuleList()
 
         self.reassembles.append(
@@ -356,7 +358,7 @@ class ReassembleBlock(nn.Module):
             x = reassemble[0:2](emb)
             if x.ndim == 3:
                 x = reassemble[2](x)
-            
+
             x = reassemble[3:len(reassemble)](x)
             results.append(x)
 
