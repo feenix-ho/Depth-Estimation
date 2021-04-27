@@ -310,7 +310,7 @@ class ToTensor(object):
         depth = sample['depth']
         if self.mode == 'train':
             depth = self.to_tensor(depth)
-            embedding = torch.LongTensor(embedding)
+            embedding = torch.Tensor(embedding)
             bbox = torch.LongTensor(bbox)
             return {'image': image, 'depth': depth, 'focal': focal, 'embedding': embedding,
                     'bbox': bbox, 'cropped_image': cropped_image}
