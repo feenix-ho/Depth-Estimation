@@ -15,7 +15,7 @@ class KnowledgeFusion(nn.Module):
 
     def __init__(self, emb_size, dims, max_patches, patch_dim, **kwargs):
         super().__init__()
-
+        self.patch_size = kwargs['patch_size']
         self.layers = [InjectionBlock(
             emb_size, patch_dim, dims[0], max_patches, **kwargs)]
 
@@ -101,7 +101,7 @@ class RDNet(nn.Module):
         max_patches = num_patches[0] * num_patches[1]
 
         self.to_patch = Rearrange('b c (h p1) (w p2) -> b h w (p1 p2 c)',
-                                  p1=num_patches[0], p2=num_patches[1])
+                                  p1=int(num_patches[0]), p2=int(num_patches[1]))
         self.knowledge = KnowledgeFusion(
             dims=knowledge_dims,
             max_patches=max_patches,

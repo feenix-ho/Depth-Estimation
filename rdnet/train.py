@@ -430,17 +430,14 @@ def main_worker(gpu, ngpus_per_node, args):
                 sample_batched['depth'].cuda(args.gpu, non_blocking=True))
             embedding = torch.autograd.Variable(
                 sample_batched['embedding'].cuda(args.gpu, non_blocking=True))
-            bbox = torch.autograd.Variable(
+            location = torch.autograd.Variable(
                 sample_batched['bbox'].cuda(args.gpu, non_blocking=True))
             cropped_image = torch.autograd.Variable(
                 sample_batched['cropped_image'].cuda(args.gpu, non_blocking=True))
             lpg8x8, lpg4x4, lpg2x2, reduc1x1, depth_est = model(
                 image, embedding, location)
 
-            if args.dataset == 'nyu':
-                mask = depth_gt > 0.1
-            else:
-                mask = depth_gt > 1.0
+            mask = depth_gt > 0.1
             # computeloss
             loss = silog_criterion.forward(
                 depth_est, depth_gt, mask.to(torch.bool))
