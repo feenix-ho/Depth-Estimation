@@ -67,7 +67,7 @@ class DensePrediction(nn.Module):
 
         self.reassemble = ReassembleBlock(
             inp_dim=inp_dim, 
-            out_dim=hidden_dims,
+            out_dims=hidden_dims,
             **kwargs
         )
 
