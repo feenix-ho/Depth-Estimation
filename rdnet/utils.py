@@ -2,8 +2,8 @@ import torch
 from torch import nn
 
 from einops import rearrange, repeat
-from blocks import FeatureFusionBlock
 from kornia import filters
+
 
 def compute_errors(gt, pred):
     thresh = np.maximum((gt / pred), (pred / gt))
@@ -45,6 +45,7 @@ def compute_ssi(self, preds, targets, masks, trimmed=1.):
 
     return torch.cat(ssi_trim)
 
+
 def compute_reg(self, preds, targets, masks, num_scale=4):
     def compute_grad(preds, targets, masks):
         diff = repeat(preds - targets, 'b h w -> b c h w', c=1)
@@ -58,10 +59,11 @@ def compute_reg(self, preds, targets, masks, num_scale=4):
 
     for scale in range(num_scale):
         total += compute_grad(preds[:, ::step, ::step],
-                                targets[:, ::step, ::step], masks[:, ::step, ::step])
+                              targets[:, ::step, ::step], masks[:, ::step, ::step])
         step *= 2
 
     return total
+
 
 def compute_loss(self, trimmed=1., num_scale=4, alpha=.5, **kwagrs):
     def align(imgs, masks):
@@ -78,17 +80,5 @@ def compute_loss(self, trimmed=1., num_scale=4, alpha=.5, **kwagrs):
 
     loss = compute_ssi(preds, targets, masks, trimmed)
     if alpha > 0.:
-        loss += alpha * compute_reg(num_scale=num_scale, kwargs)
+        loss += alpha * compute_reg(num_scale=num_scale, **kwargs)
     return loss.mean(dim=0)
-
-
-def _make_fusion_block(features, use_bn):
-    return FeatureFusionBlock(
-        features,
-        nn.ReLU(False),
-        deconv=False,
-        bn=use_bn,
-        expand=False,
-        align_corners=True,
-    )
-

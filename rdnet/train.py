@@ -326,9 +326,6 @@ def main_worker(gpu, ngpus_per_node, args):
                   end_learning_rate=args.end_learning_rate,
                   variance_focus=args.variance_focus,
                   transformer=args.transformer)
-    model.train()
-    model.decoder.apply(weights_init_xavier)
-    set_misc(model)
 
     num_params = sum([np.prod(p.size()) for p in model.parameters()])
     print("Total number of parameters: {}".format(num_params))
@@ -349,8 +346,7 @@ def main_worker(gpu, ngpus_per_node, args):
 
     # Training parameters
     # model.parameters()
-    optimizer = torch.optim.AdamW([{'params': model.mo20dule.encoder.parameters(), 'weight_decay': args.weight_decay},
-                                   {'params': model.module.decoder.parameters(), 'weight_decay': 0}],
+    optimizer = torch.optim.AdamW(params=model.parameters(), weight_decay=args.weight_decay,
                                   lr=args.learning_rate, eps=args.adam_eps)
 
     model_just_loaded = False

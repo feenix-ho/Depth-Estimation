@@ -3,7 +3,7 @@ from torch import nn
 
 from einops import rearrange, repeat
 from einops.layers.torch import Rearrange
-from blocks import InjectionBlock, ScratchBlock, ReassembleBlock, RefineBlock
+from blocks import InjectionBlock, ScratchBlock, ReassembleBlock, RefineBlock, Interpolate
 from kornia import filters
 
 
@@ -69,7 +69,7 @@ class DensePrediction(nn.Module):
         )
 
         self.reassemble = ReassembleBlock(
-            inp_dim=inp_dim, 
+            inp_dim=inp_dim,
             out_dims=hidden_dims,
             **kwargs
         )

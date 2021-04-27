@@ -6,8 +6,19 @@ from einops import rearrange, repeat
 from einops.layers.torch import Rearrange
 
 
+def _make_fusion_block(features, use_bn):
+    return FeatureFusionBlock(
+        features,
+        nn.ReLU(False),
+        deconv=False,
+        bn=use_bn,
+        expand=False,
+        align_corners=True,
+    )
+
+
 class RefineBlock(nn.Module):
-    def __init__(self, in_shape, out_shape, groups=1, expand=False, use_bn=False):
+    def __init__(self, in_shape, out_shape, groups=1, expand=False, use_bn=False, **kwargs):
         super().__init__()
 
         out_shape1 = out_shape
@@ -262,6 +273,7 @@ def get_readout_oper(vit_features, features, use_readout, start_index=1):
 
 class ReassembleBlock(nn.Module):
     def __init__(self, num_patches, inp_dim, out_dims, readout, start_index=1, **kwargs):
+        super().__init__()
         self.reassembles = nn.ModuleList()
         readout_oper = get_readout_oper(
             vit_features=inp_dim, features=out_dims, use_readout=readout)
@@ -270,7 +282,8 @@ class ReassembleBlock(nn.Module):
             nn.Sequential(
                 readout_oper[0],
                 Transpose(1, 2),
-                nn.Unflatten(2, torch.Size([num_patches[0], num_patches[1]])),
+                nn.Unflatten(2, torch.Size(
+                    [int(num_patches[0]), int(num_patches[1])])),
                 nn.Conv2d(
                     in_channels=inp_dim,
                     out_channels=out_dims[0],
@@ -295,7 +308,8 @@ class ReassembleBlock(nn.Module):
             nn.Sequential(
                 readout_oper[1],
                 Transpose(1, 2),
-                nn.Unflatten(2, torch.Size([num_patches[0], num_patches[1]])),
+                nn.Unflatten(2, torch.Size(
+                    [int(num_patches[0]), int(num_patches[1])])),
                 nn.Conv2d(
                     in_channels=inp_dim,
                     out_channels=out_dims[1],
@@ -320,7 +334,8 @@ class ReassembleBlock(nn.Module):
             nn.Sequential(
                 readout_oper[2],
                 Transpose(1, 2),
-                nn.Unflatten(2, torch.Size([num_patches[0], num_patches[1]])),
+                nn.Unflatten(2, torch.Size(
+                    [int(num_patches[0]), int(num_patches[1])])),
                 nn.Conv2d(
                     in_channels=inp_dim,
                     out_channels=out_dims[2],
@@ -335,7 +350,8 @@ class ReassembleBlock(nn.Module):
             nn.Sequential(
                 readout_oper[3],
                 Transpose(1, 2),
-                nn.Unflatten(2, torch.Size([num_patches[0], num_patches[1]])),
+                nn.Unflatten(2, torch.Size(
+                    [int(num_patches[0]), int(num_patches[1])])),
                 nn.Conv2d(
                     in_channels=inp_dim,
                     out_channels=out_dims[3],
