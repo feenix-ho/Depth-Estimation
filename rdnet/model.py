@@ -37,10 +37,11 @@ class KnowledgeFusion(nn.Module):
         b, n, _ = embs.shape
         locs = self.patching(locations, patch_size=self.patch_size)
         masks = torch.zeros(patches.shape[:3], dtype=torch.bool)
+        masks = repeat(masks, 'b h w -> b n h w', n=n)
 
-        for loc in locs:
-            for obj_loc in loc:
-                masks[:, obj_loc[0]:obj_loc[2], obj_loc[1]:obj_loc[3]] = True
+        for idx, loc in enumerate(locs):
+            for jdx, obj_loc in enumerate(loc):
+                masks[idx, jdx, obj_loc[0]:obj_loc[2], obj_loc[1]:obj_loc[3]] = True
 
         masks = rearrange(masks, 'b n h w -> (b n) (h w)')
         patches = repeat(patches, 'b h w d -> b n (h w) d', n=n)
