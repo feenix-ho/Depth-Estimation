@@ -61,7 +61,7 @@ class Arg_train:
             map(int, config['DEFAULT']['dense_dims'].split(',')))  # 1024, 1024, 1024, 1024
         self.latent_dims = int(config['DEFAULT']['latent_dims'])  # 256
         self.emb_size = int(config['DEFAULT']['emb_size'])  # 4096
-        self.readout = config['DEFAULT']['readout']  # ignore
+        self.use_readout = config['DEFAULT']['use_readout']  # ignore
         self.hooks = list(
             map(int, config['DEFAULT']['hooks'].split(',')))  # 3, 6, 9, 12
         self.batch_size = int(config['DEFAULT']['batch_size'])  # 4
