@@ -89,40 +89,22 @@ class DataLoadPreprocess(Dataset):
         if args.data_path[-1] != '/':
             args.data_path += '/'
 
-        # load file names in 'custom_data_info.json' & 'custom_data_info1.json'
+        # load file names in 'custom_data_info.json'
         open_file = open(args.data_path + 'custom_data_info.json')
         self.filenames = json.load(open_file)['idx_to_files']
         open_file.close()
-        open_file = open(args.data_path + 'custom_data_info1.json')
-        self.filenames += json.load(open_file)['idx_to_files']
-        open_file.close()
-        print('images: ', len(self.filenames))
+        print('Images: ', len(self.filenames))
 
-        # load bounding boxes location in 'location.npz' & 'location1.npz'
-        open_file = open(args.data_path + 'location.npz', 'rb')
-        self.bbox = np.load(open_file)['arr_0']
-        open_file.close()
-        open_file = open(args.data_path + 'location1.npz', 'rb')
-        self.bbox = np.vstack((self.bbox, np.load(open_file)['arr_0']))
-        print('bbox dimension: ', self.bbox.shape)
-        open_file.close()
+        self.bbox_embed_path = args.data_path + 'bbox_embed/'
+        path = self.bbox_embed_path
+        print('Bboxs & Embeddings: ', len(
+            [f for f in os.listdir(path)if os.path.isfile(os.path.join(path, f))]))
 
-        # load depth images in 'depth.npz'
-        open_file = open(args.data_path + 'depth.npz', 'rb')
-        self.depth = np.load(open_file)['arr_0']
-        open_file.close()
-        print('depth dimension: ', self.depth.shape)
-        # '''
-        # load embeddings in 'location.npz' & 'location1.npz'
-        open_file = open(args.data_path + 'embedding.npz', 'rb')
-        self.embedding = np.load(open_file)['arr_0']
-        open_file.close()
-        open_file = open(args.data_path + 'embedding1.npz', 'rb')
-        self.embedding = np.vstack(
-            (self.embedding, np.load(open_file)['arr_0']))
-        print('embedding dimension: ', self.embedding.shape)
-        open_file.close()
-        # '''
+        self.depths_path = args.data_path + 'nyu_depth/'
+        path = self.depths_path
+        print('Depths: ', len([f for f in os.listdir(
+            path)if os.path.isfile(os.path.join(path, f))]))
+
         self.mode = mode
         self.transform = transform
         self.to_tensor = ToTensor
@@ -131,26 +113,28 @@ class DataLoadPreprocess(Dataset):
     def __getitem__(self, idx):
         sample_path = self.filenames[idx]
         print(sample_path)
-        focal = ''  # float(sample_path.split()[0])
-
+        focal = float(idx)
         if self.mode == 'train':
             image_path = os.path.join(
                 self.args.data_path, "./" + sample_path.split()[0])
-            # depth_path = os.path.join(
-            # self.args.gt_path, "./" + sample_path.split()[1])
-
+            depth_path = self.depths_path + str(idx) + '.npz'
+            bbox_embed_path = self.bbox_embed_path + str(idx) + '.npz'
+            print(bbox_embed_path)
             image = Image.open(image_path)
-            x = int(sample_path[4:-4])
-            depth_gt = self.depth[x]
+            f = np.load(depth_path)
+            depth_gt = np.load(depth_path)['depth']
+            f.close()
 
-            embedding = self.embedding[idx]
-            bbox = self.bbox[idx]
+            f = np.load(bbox_embed_path)
+            bbox = f['bbox']
+            embedding = f['embed']
+            f.close()
+
             # test
             '''
             draw = ImageDraw.Draw(image)
-            for i in range(10):
-              x1,y1,x2,y2 = int(bbox[i][0]), int(bbox[i][1]), int(bbox[i][2]), int(bbox[i][3])
-              print(x1, y1, x2, y2)
+            for b in bbox:
+              x1,y1,x2,y2 = b
               draw.rectangle(((x1, y1), (x2, y2)), outline='red')
             display(image)
             '''
