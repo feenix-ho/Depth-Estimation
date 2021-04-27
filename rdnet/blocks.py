@@ -93,7 +93,7 @@ class InjectionBlock(nn.Module):
         - inp_dim: dimension of input patches
         - out_dim: dimension of patches to be output
         - max_patches: maximum number of patches that could be fed
-        - readout: type of readout (ignore/add/proj)
+        - use_readout: type of readout (ignore/add/proj)
         - transformer: the class of transformer to be used
     '''
 
@@ -126,13 +126,13 @@ class InjectionBlock(nn.Module):
         '''
         b, n, p, _ = imgs.shape
         x = self.rel_trans(embs)
-        x = repeat(x, 'b n () d -> (b n) p d', p=p)
+        x = repeat(x, 'b n d -> (b n) p d', p=p)
 
         y = self.proj(imgs)
         y = rearrange(y, 'b n p d -> (b n) p d')
         y += x
 
-        cls_token = repeat(self.cls_token, '() p d -> b p d', b=b*n)
+        cls_token = repeat(self.cls_token, 'p d -> b p d', b=b*n)
         y = torch.cat([cls_token, y], dim=1)
         y += self.pos_emb[:, :(p + 1)]
 
@@ -180,7 +180,7 @@ class ReassembleBlock(nn.Module):
         super().__init__()
         self.reassembles = nn.ModuleList()
         readout_oper = get_readout_oper(
-            vit_features=inp_dim, features=out_dims, **kwargs)
+            inp_dim=inp_dim, out_dims=out_dims, **kwargs)
 
         self.reassembles.append(
             nn.Sequential(
