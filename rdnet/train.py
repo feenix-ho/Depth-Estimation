@@ -315,7 +315,7 @@ def main_worker(gpu, ngpus_per_node, args):
                   latent_dim=args.latent_dims,
                   data_path=args.data_path,
                   emb_size=args.emb_size,
-                  readout=args.readout,
+                  use_readout=args.use_readout,
                   hooks=args.hooks,
                   batch_size=args.batch_size,
                   num_epochs=args.num_epochs,
@@ -417,12 +417,11 @@ def main_worker(gpu, ngpus_per_node, args):
     steps_per_epoch = len(dataloader.data)
     num_total_steps = args.num_epochs * steps_per_epoch
     epoch = global_step // steps_per_epoch
-
     while epoch < args.num_epochs:
+        print(epoch, '/', args.num_epochs)
         for step, sample_batched in enumerate(dataloader.data):
             optimizer.zero_grad()
             before_op_time = time.time()
-
             image = torch.autograd.Variable(
                 sample_batched['image'].cuda(args.gpu, non_blocking=True))
             focal = torch.autograd.Variable(
@@ -431,11 +430,10 @@ def main_worker(gpu, ngpus_per_node, args):
                 sample_batched['depth'].cuda(args.gpu, non_blocking=True))
             embedding = torch.autograd.Variable(
                 sample_batched['embedding'].cuda(args.gpu, non_blocking=True))
-            location = torch.autograd.Variable(
+            bbox = torch.autograd.Variable(
                 sample_batched['bbox'].cuda(args.gpu, non_blocking=True))
             cropped_image = torch.autograd.Variable(
                 sample_batched['cropped_image'].cuda(args.gpu, non_blocking=True))
-
             lpg8x8, lpg4x4, lpg2x2, reduc1x1, depth_est = model(
                 image, embedding, location)
 
