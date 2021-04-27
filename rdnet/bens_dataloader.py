@@ -112,14 +112,14 @@ class DataLoadPreprocess(Dataset):
 
     def __getitem__(self, idx):
         sample_path = self.filenames[idx]
-        print(sample_path)
         focal = float(idx)
+
         if self.mode == 'train':
             image_path = os.path.join(
                 self.args.data_path, "./" + sample_path.split()[0])
             depth_path = self.depths_path + str(idx) + '.npz'
             bbox_embed_path = self.bbox_embed_path + str(idx) + '.npz'
-            print(bbox_embed_path)
+            print(sample_path, bbox_embed_path)
             image = Image.open(image_path)
             f = np.load(depth_path)
             depth_gt = np.load(depth_path)['depth']
