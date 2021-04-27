@@ -40,6 +40,8 @@ from bens_dataloader import *
 
 import configparser
 
+from nystrom_attention import Nystromer
+
 
 class Arg_train:
     def __init__(self):
@@ -83,6 +85,7 @@ class Arg_train:
         self.gpu = 0
         self.log_directory = ''
         self.do_online_eval = False
+        self.transformer = Nystromer
 
 
 args = Arg_train()
@@ -321,7 +324,8 @@ def main_worker(gpu, ngpus_per_node, args):
                   num_threads=args.num_threads,
                   bts_size=args.bts_size,
                   end_learning_rate=args.end_learning_rate,
-                  variance_focus=args.variance_focus)
+                  variance_focus=args.variance_focus,
+                  transformer=args.transformer)
     model.train()
     model.decoder.apply(weights_init_xavier)
     set_misc(model)
@@ -567,8 +571,8 @@ def main():
     os.system(command)
 
     args_out_path = args.log_directory + '/' + \
-        args.model_name + '/' + sys.argv[1]
-    command = 'cp ' + sys.argv[1] + ' ' + args_out_path
+        args.model_name + '/' + sys.argv[0]
+    command = 'cp ' + sys.argv[0] + ' ' + args_out_path
     os.system(command)
 
     if args.checkpoint_path == '':

@@ -6,6 +6,7 @@ from einops.layers.torch import Rearrange
 from blocks import InjectionBlock, ScratchBlock, ReassembleBlock, RefineBlock
 from kornia import filters
 
+
 class KnowledgeFusion(nn.Module):
     '''
     Description:
@@ -14,7 +15,7 @@ class KnowledgeFusion(nn.Module):
 
     def __init__(self, emb_size, dims, max_patches, patch_dim, **kwargs):
         super().__init__()
-        
+
         self.layers = [InjectionBlock(
             emb_size, patch_dim, dims[0], max_patches, **kwargs)]
 
@@ -51,15 +52,17 @@ class KnowledgeFusion(nn.Module):
         result = (patches * masks).sum(dim=1) / masks.sum(dim=1)
         return result
 
+
 class DensePrediction(nn.Module):
     def __init__(
+        self,
         inp_dim,
         hidden_dims,
         out_dim,
         **kwargs
     ):
         super().__init__()
-        
+
         self.scratch = ScratchBlock(
             hidden_dim=inp_dim,
             **kwargs
@@ -81,7 +84,7 @@ class DensePrediction(nn.Module):
         results = self.scratch(embs)
         results = self.reassemble(results)
         results = self.refine(results)
-        
+
         return results
 
 
@@ -110,10 +113,12 @@ class RDNet(nn.Module):
             hidden_dims=dense_dims,
             out_dim=latent_dim,
             max_patches=max_patches,
+            num_patches=num_patches,
             **kwargs
         )
         self.head = nn.Sequential(
-            nn.Conv2d(latent_dim, latent_dim // 2, kernel_size=3, stride=1, padding=1),
+            nn.Conv2d(latent_dim, latent_dim // 2,
+                      kernel_size=3, stride=1, padding=1),
             Interpolate(scale_factor=2, mode="bilinear"),
             nn.Conv2d(latent_dim // 2, 32, kernel_size=3, stride=1, padding=1),
             nn.ReLU(True),
