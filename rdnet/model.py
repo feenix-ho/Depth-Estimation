@@ -55,6 +55,7 @@ class KnowledgeFusion(nn.Module):
 
 class DensePrediction(nn.Module):
     def __init__(
+        self,
         inp_dim,
         hidden_dims,
         out_dim,
