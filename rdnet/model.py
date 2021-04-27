@@ -113,6 +113,7 @@ class RDNet(nn.Module):
             hidden_dims=dense_dims,
             out_dim=latent_dim,
             max_patches=max_patches,
+            num_patches=num_patches,
             **kwargs
         )
         self.head = nn.Sequential(
