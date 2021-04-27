@@ -86,6 +86,7 @@ class Arg_train:
         self.log_directory = ''
         self.do_online_eval = False
         self.transformer = Nystromer
+        self.multiprocessing_distributed = False
 
 
 args = Arg_train()
