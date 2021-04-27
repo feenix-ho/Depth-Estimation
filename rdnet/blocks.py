@@ -254,7 +254,7 @@ class ScratchBlock(nn.Module):
         return result
 
 
-def get_readout_oper(vit_features, features, use_readout, start_index=1):
+def get_readout_oper(vit_features, features, use_readout, start_index=1, **kwargs):
     if use_readout == "ignore":
         readout_oper = [Slice(start_index)] * len(features)
     elif use_readout == "add":
