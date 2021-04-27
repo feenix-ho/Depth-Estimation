@@ -163,9 +163,9 @@ class InjectionBlock(nn.Module):
         - transformer: the class of transformer to be used
     '''
 
-    def __init__(self, emb_size, inp_dim, out_dim, max_patches, readout, transformer, **kwargs):
+    def __init__(self, emb_size, inp_dim, out_dim, max_patches, use_readout, transformer, **kwargs):
         super().__init__()
-        self.readout = readout
+        self.readout = use_readout
         self.rel_trans = nn.Sequential(nn.Linear(emb_size, out_dim),
                                        transformer(dim=out_dim, depth=1))
 
@@ -229,7 +229,7 @@ class ScratchBlock(nn.Module):
         Params:
     '''
 
-    def __init__(self, hidden_dim, max_patches, hooks, readout, transformer, **kwargs):
+    def __init__(self, hidden_dim, max_patches, hooks, use_readout, transformer, **kwargs):
         super().__init__()
         self.pos_emb = nn.Parameter(torch.randn(
             1, int(max_patches) + 1, hidden_dim))
