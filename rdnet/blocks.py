@@ -265,7 +265,7 @@ class ReassembleBlock(nn.Module):
         super().__init__()
         self.reassembles = nn.ModuleList()
         readout_oper = get_readout_oper(
-            vit_features=0, features=256, readout=readout, start_index=start_index)
+            vit_features=0, features=256, use_readout=readout, start_index=start_index)
         self.reassembles.append(
             nn.Sequential(
                 readout_oper[0],
