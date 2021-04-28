@@ -68,7 +68,7 @@ def get_readout_oper(inp_dim, out_dims, use_readout, start_index=1, **kwargs):
             False
         ), "wrong operation for readout token, use_readout can be 'ignore', 'add', or 'project'"
 
-    return readout_oper
+    return nn.ModuleList(readout_oper)
 
 
 class Transpose(nn.Module):
@@ -369,7 +369,7 @@ class RefineBlock(nn.Module):
         for x, layer_rn in zip(embs, self.layers_rn):
             results.append(layer_rn(x))
 
-        for result, refinenet in zip(results[::-1], self.refinenets):
+        for result, refinenet in zip(results[::-1], self.refinenets[::-1]):
             if y is not None:
                 y = refinenet(y, result)
             else:
