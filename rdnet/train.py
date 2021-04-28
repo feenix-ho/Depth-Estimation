@@ -425,12 +425,12 @@ def main_worker(gpu, ngpus_per_node, args):
         for step, sample_batched in enumerate(dataloader.data):
             optimizer.zero_grad()
             before_op_time = time.time()
-            image = image.to(DEVICE)
-            focal = focal.to(DEVICE)
-            depth_gt = depth.to(DEVICE)
-            embedding = embedding.to(DEVICE)
-            location = bbox.to(DEVICE)
-            cropped_image = cropped_image.to(DEVICE)
+            image = sample_batched['image'].to(DEVICE)
+            focal = sample_batched['focal'].to(DEVICE)
+            depth_gt = sample_batched['depth'].to(DEVICE)
+            embedding = sample_batched['embedding'].to(DEVICE)
+            location = sample_batched['bbox'].to(DEVICE)
+            cropped_image = sample_batched['cropped_image'].to(DEVICE)
             lpg8x8, lpg4x4, lpg2x2, reduc1x1, depth_est = model(
                 image, embedding, location)
 
