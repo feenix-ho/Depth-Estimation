@@ -106,7 +106,7 @@ class InjectionBlock(nn.Module):
                                        transformer(dim=out_dim, depth=1)).cuda()
         self.proj = nn.Linear(inp_dim, out_dim).cuda()
         self.pos_emb = nn.Parameter(
-            torch.randn(1, int(max_patches) + 1, out_dim)).cuda()
+            torch.randn(1, int(max_patches), out_dim)).cuda()
         self.cls_token = nn.Parameter(torch.randn(1, out_dim)).cuda()
 
         self.transformer = transformer(
@@ -134,11 +134,14 @@ class InjectionBlock(nn.Module):
         y += x
 
         cls_token = repeat(self.cls_token, 'p d -> b p d', b=b*n)
+        y += self.pos_emb[:, :p]
         y = torch.cat([cls_token, y], dim=1)
-        y += self.pos_emb[:, :(p + 1)]
 
+        cls_masks = torch.ones((b * n, 1), dtype=torch.bool)
+        masks = torch.cat([masks, cls_masks], dim=1)
         y = self.transformer(y, masks=masks)
         y = self.readout[0](y)
+
         x = y.mean(dim=1)
         x = rearrange(x, '(b n) d -> b n d', n=n)
         y = rearrange(y, '(b n) p d -> b n p d', n=n)
