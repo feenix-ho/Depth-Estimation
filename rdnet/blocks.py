@@ -70,6 +70,7 @@ def get_readout_oper(inp_dim, out_dims, use_readout, start_index=1, **kwargs):
 
     return readout_oper
 
+
 class Transpose(nn.Module):
     def __init__(self, dim0, dim1):
         super(Transpose, self).__init__()
@@ -99,10 +100,11 @@ class InjectionBlock(nn.Module):
 
     def __init__(self, emb_size, inp_dim, out_dim, max_patches, use_readout, transformer, **kwargs):
         super().__init__()
-        self.readout = get_readout_oper(inp_dim=out_dim, out_dims=[out_dim], use_readout=use_readout, **kwargs)
+        self.readout = get_readout_oper(inp_dim=out_dim, out_dims=[
+                                        out_dim], use_readout=use_readout, **kwargs)
         self.rel_trans = nn.Sequential(nn.Linear(emb_size, out_dim),
                                        transformer(dim=out_dim, depth=1))
-
+        self.rel_trans.cuda()
         self.proj = nn.Linear(inp_dim, out_dim)
         self.pos_emb = nn.Parameter(
             torch.randn(1, int(max_patches) + 1, out_dim))
@@ -174,6 +176,7 @@ class ScratchBlock(nn.Module):
             results.append(t)
 
         return result
+
 
 class ReassembleBlock(nn.Module):
     def __init__(self, num_patches, inp_dim, out_dims, start_index=1, **kwargs):
