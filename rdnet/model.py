@@ -1,5 +1,6 @@
 import torch
 from torch import nn
+from torch.nn import functional as F
 
 from einops import rearrange, repeat
 from einops.layers.torch import Rearrange
@@ -138,4 +139,9 @@ class RDNet(nn.Module):
         results = self.dense(patches)
         results = self.head(results)
 
-        return results
+        return F.interpolate(
+            results.unsqueeze(1),
+            size=images.shape[1:3],
+            mode="bicubic",
+            align_corners=False
+        )
