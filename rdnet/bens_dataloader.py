@@ -133,7 +133,7 @@ class DataLoadPreprocess(Dataset):
             bbox_embed_path = self.bbox_embed_path + str(idx) + '.npz'
             print(sample_path, bbox_embed_path)
             # resize image
-            image = Image.open(image_path)..resize(size, Image.BICUBIC)
+            image = Image.open(image_path).resize(size, Image.BICUBIC)
 
             f = np.load(depth_path)
             depth_gt = np.load(depth_path)['depth'].T
