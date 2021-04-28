@@ -158,8 +158,8 @@ class ScratchBlock(nn.Module):
     def __init__(self, hidden_dim, max_patches, hooks, use_readout, transformer, **kwargs):
         super().__init__()
         self.pos_emb = nn.Parameter(torch.randn(
-            1, int(max_patches) + 1, hidden_dim))
-        self.cls_token = nn.Parameter(torch.randn(1, 1, hidden_dim))
+            1, int(max_patches), hidden_dim))
+        self.cls_token = nn.Parameter(torch.randn(1, hidden_dim))
 
         self.transformers = nn.ModuleList()
 
@@ -170,8 +170,12 @@ class ScratchBlock(nn.Module):
             pre = cur
 
     def forward(self, embs):
-        x = embs
+        b, p, _ = embs.shape
+        x = embs + self.pos_emb[:, :p]
         results = []
+
+        cls_token = repeat(self.cls_token, 'p d -> b p d', b=b)
+        x = torch.cat([cls_token, x], dim=1)
 
         for transformer in self.transformers:
             x = transformer(x)
