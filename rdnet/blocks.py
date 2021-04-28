@@ -139,7 +139,7 @@ class InjectionBlock(nn.Module):
 
         cls_masks = torch.ones((b * n, 1), dtype=torch.bool)
         masks = torch.cat([masks, cls_masks], dim=1)
-        y = self.transformer(y, masks=masks)
+        y = self.transformer(y, mask=masks)
         y = self.readout[0](y)
 
         x = y.mean(dim=1)
