@@ -75,6 +75,16 @@ class BtsDataLoader(object):
                 'mode should be one of \'train, test, online_eval\'. Got {}'.format(mode))
 
 
+def bbox_resize(location):
+    x_scale = 384 / 640
+    y_scale = 256 / 480
+    x = int(np.round(location[0] * x_scale))
+    y = int(np.round(location[1] * y_scale))
+    xmax = int(np.round(location[2] * x_scale))
+    ymax = int(np.round(location[3] * y_scale))
+    return [x, y, xmax, ymax]
+
+
 class DataLoadPreprocess(Dataset):
     def __init__(self, args, mode, transform=None, is_for_online_eval=False):
         self.args = args
@@ -113,20 +123,32 @@ class DataLoadPreprocess(Dataset):
     def __getitem__(self, idx):
         sample_path = self.filenames[idx]
         focal = float(idx)
+        x = int(sample_path[4:-4])
+        size = (384, 256)
 
         if self.mode == 'train':
             image_path = os.path.join(
                 self.args.data_path, "./" + sample_path.split()[0])
-            depth_path = self.depths_path + str(idx) + '.npz'
+            depth_path = self.depths_path + str(x) + '.npz'
             bbox_embed_path = self.bbox_embed_path + str(idx) + '.npz'
             print(sample_path, bbox_embed_path)
-            image = Image.open(image_path)
+            # resize image
+            image = Image.open(image_path).resize(size, Image.BICUBIC)
+
             f = np.load(depth_path)
-            depth_gt = np.load(depth_path)['depth']
+            depth_gt = np.load(depth_path)['depth'].T
             f.close()
+
+            # resize depth
+            img_depth = depth_gt * 1000.0
+            img_depth_uint16 = img_depth.astype(np.uint16)
+            depth_gt = Image.fromarray(
+                img_depth_uint16).resize(size, Image.NEAREST)
 
             f = np.load(bbox_embed_path)
             bbox = f['bbox']
+            # resize bbox
+            bbox = np.apply_along_axis(bbox_resize, 1, bbox)
             embedding = f['embed']
             f.close()
 
