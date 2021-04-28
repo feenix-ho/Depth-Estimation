@@ -41,6 +41,9 @@ from bens_dataloader import *
 import configparser
 
 from nystrom_attention import Nystromer
+from reformer_pytorch import Reformer
+from routing_transformer import RoutingTransformer
+from linear_attention_transformer import LinearAttentionTransformer
 
 
 class Arg_train:
