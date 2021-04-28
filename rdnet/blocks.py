@@ -108,7 +108,7 @@ class InjectionBlock(nn.Module):
         self.proj = nn.Linear(inp_dim, out_dim)
         self.pos_emb = nn.Parameter(
             torch.randn(1, int(max_patches) + 1, out_dim))
-        self.cls_token = nn.Parameter(torch.randn(1, 1, out_dim))
+        self.cls_token = nn.Parameter(torch.randn(1, out_dim))
 
         self.transformer = transformer(
             dim=out_dim, depth=1)
