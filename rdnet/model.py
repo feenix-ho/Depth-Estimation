@@ -38,7 +38,7 @@ class KnowledgeFusion(nn.Module):
         '''
         b, n, _ = embs.shape
         locs = self.patching(locations, patch_size=self.patch_size)
-        masks = torch.zeros(patches.shape[:3], dtype=torch.bool).to(self.device)
+        masks = torch.zeros(patches.shape[:3], dtype=torch.bool).to(embs.device)
         masks = repeat(masks, 'b h w -> b n h w', n=n)
 
         for idx, loc in enumerate(locs):
