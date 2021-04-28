@@ -175,7 +175,7 @@ class ScratchBlock(nn.Module):
 
         for transformer in self.transformers:
             x = transformer(x)
-            results.append(t)
+            results.append(x)
 
         return result
 
