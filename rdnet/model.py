@@ -140,7 +140,7 @@ class RDNet(nn.Module):
         results = self.head(results)
 
         return F.interpolate(
-            results.unsqueeze(1),
+            results,
             size=images.shape[1:3],
             mode="bicubic",
             align_corners=False
