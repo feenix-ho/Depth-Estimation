@@ -177,7 +177,7 @@ class ScratchBlock(nn.Module):
             x = transformer(x)
             results.append(x)
 
-        return result
+        return results
 
 
 class ReassembleBlock(nn.Module):
