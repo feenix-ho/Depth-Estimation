@@ -1,4 +1,4 @@
-[DEFAULT]
+[COLAB]
 data_path = drive/MyDrive/dataset
 image_height = 480
 image_width = 640
