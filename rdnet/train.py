@@ -90,6 +90,8 @@ class Arg_train:
         self.multiprocessing_distributed = False
 
 
+DEVICE = torch.device('cuda')
+
 args = Arg_train()
 
 if args.mode == 'train' and not args.checkpoint_path:
@@ -337,7 +339,7 @@ def main_worker(gpu, ngpus_per_node, args):
     print("Total number of learning parameters: {}".format(num_params_update))
 
     model = torch.nn.DataParallel(model)
-    model.cuda()
+    model.to(DEVICE)
 
     print("Model Initialized")
 
@@ -423,18 +425,12 @@ def main_worker(gpu, ngpus_per_node, args):
         for step, sample_batched in enumerate(dataloader.data):
             optimizer.zero_grad()
             before_op_time = time.time()
-            image = torch.autograd.Variable(
-                sample_batched['image'].cuda(args.gpu, non_blocking=True))
-            focal = torch.autograd.Variable(
-                sample_batched['focal'].cuda(args.gpu, non_blocking=True))
-            depth_gt = torch.autograd.Variable(
-                sample_batched['depth'].cuda(args.gpu, non_blocking=True))
-            embedding = torch.autograd.Variable(
-                sample_batched['embedding'].cuda(args.gpu, non_blocking=True))
-            location = torch.autograd.Variable(
-                sample_batched['bbox'].cuda(args.gpu, non_blocking=True))
-            cropped_image = torch.autograd.Variable(
-                sample_batched['cropped_image'].cuda(args.gpu, non_blocking=True))
+            image = image.to(DEVICE)
+            focal = focal.to(DEVICE)
+            depth_gt = depth.to(DEVICE)
+            embedding = embedding.to(DEVICE)
+            location = bbox.to(DEVICE)
+            cropped_image = cropped_image.to(DEVICE)
             lpg8x8, lpg4x4, lpg2x2, reduc1x1, depth_est = model(
                 image, embedding, location)
 
