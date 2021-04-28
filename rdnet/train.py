@@ -91,6 +91,8 @@ class Arg_train:
         self.do_online_eval = False
         self.transformer = Nystromer
         self.multiprocessing_distributed = False
+        self.log_freq = 100
+        self.save_freq = 500
 
 
 DEVICE = torch.device('cuda')
