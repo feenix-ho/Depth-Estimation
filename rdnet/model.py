@@ -16,12 +16,14 @@ class KnowledgeFusion(nn.Module):
     def __init__(self, emb_size, dims, max_patches, patch_dim, patch_size, **kwargs):
         super().__init__()
         self.patch_size = patch_size
-        self.layers = [InjectionBlock(
+        layers = [InjectionBlock(
             emb_size=emb_size, inp_dim=patch_dim, out_dim=dims[0], max_patches=max_patches, **kwargs)]
 
         for idx in range(len(dims) - 1):
-            self.layers.append(InjectionBlock(
+            layers.append(InjectionBlock(
                 emb_size=dims[idx], inp_dim=dims[idx], out_dim=dims[idx + 1], max_patches=max_patches, **kwargs))
+
+        self.layers = nn.ModuleList(layers)
 
     def patching(self, locations, patch_size):
         locs = locations
@@ -36,7 +38,7 @@ class KnowledgeFusion(nn.Module):
         '''
         b, n, _ = embs.shape
         locs = self.patching(locations, patch_size=self.patch_size)
-        masks = torch.zeros(patches.shape[:3], dtype=torch.bool)
+        masks = torch.zeros(patches.shape[:3], dtype=torch.bool).to(self.device)
         masks = repeat(masks, 'b h w -> b n h w', n=n)
 
         for idx, loc in enumerate(locs):

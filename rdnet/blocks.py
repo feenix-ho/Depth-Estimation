@@ -103,11 +103,11 @@ class InjectionBlock(nn.Module):
         self.readout = get_readout_oper(inp_dim=out_dim, out_dims=[
                                         out_dim], use_readout=use_readout, **kwargs)
         self.rel_trans = nn.Sequential(nn.Linear(emb_size, out_dim),
-                                       transformer(dim=out_dim, depth=1)).cuda()
-        self.proj = nn.Linear(inp_dim, out_dim).cuda()
+                                       transformer(dim=out_dim, depth=1))
+        self.proj = nn.Linear(inp_dim, out_dim)
         self.pos_emb = nn.Parameter(
-            torch.randn(1, int(max_patches), out_dim)).cuda()
-        self.cls_token = nn.Parameter(torch.randn(1, out_dim)).cuda()
+            torch.randn(1, int(max_patches), out_dim))
+        self.cls_token = nn.Parameter(torch.randn(1, out_dim))
 
         self.transformer = transformer(
             dim=out_dim, depth=1)
@@ -137,7 +137,7 @@ class InjectionBlock(nn.Module):
         y += self.pos_emb[:, :p]
         y = torch.cat([cls_token, y], dim=1)
 
-        cls_masks = torch.ones((b * n, 1), dtype=torch.bool)
+        cls_masks = torch.ones((b * n, 1), dtype=torch.bool).to(self.device)
         masks = torch.cat([masks, cls_masks], dim=1)
         y = self.transformer(y, mask=masks)
         y = self.readout[0](y)
