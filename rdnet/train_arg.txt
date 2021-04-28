@@ -1,7 +1,7 @@
 [COLAB]
 data_path = drive/MyDrive/dataset
-image_height = 480
-image_width = 640
+image_height = 256
+image_width = 384
 patch_size = 32
 knowledge_dims = 1024,512,256
 dense_dims = 256,512,1024,1024
