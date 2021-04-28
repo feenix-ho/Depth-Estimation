@@ -369,7 +369,7 @@ class RefineBlock(nn.Module):
         for x, layer_rn in zip(embs, self.layers_rn):
             results.append(layer_rn(x))
 
-        for result, refinenet in zip(results[::-1], self.refinenets[::-1]):
+        for result, refinenet in zip(results[::-1], self.refinenets):
             if y is not None:
                 y = refinenet(y, result)
             else:
