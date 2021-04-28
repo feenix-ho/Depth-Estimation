@@ -131,7 +131,7 @@ class DataLoadPreprocess(Dataset):
                 self.args.data_path, "./" + sample_path.split()[0])
             depth_path = self.depths_path + str(x) + '.npz'
             bbox_embed_path = self.bbox_embed_path + str(idx) + '.npz'
-            print(sample_path, bbox_embed_path)
+            print(sample_path, depth_path)
             # resize image
             image = Image.open(image_path).resize(size, Image.BICUBIC)
 
