@@ -2,7 +2,7 @@
 data_path = drive/MyDrive/dataset
 image_height = 480
 image_width = 640
-patch_size = 16
+patch_size = 32
 knowledge_dims = 1024,512,256
 dense_dims = 256,512,1024,1024
 latent_dims = 256

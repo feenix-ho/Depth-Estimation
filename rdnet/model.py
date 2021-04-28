@@ -52,7 +52,7 @@ class KnowledgeFusion(nn.Module):
         for layer in self.layers:
             patches, embs = layer(patches, embs, masks)
 
-        masks = rearrange(masks, '(b n) p -> b n p', n=n)
+        masks = repeat(masks, '(b n) p -> b n p c', n=n, c=1)
         result = (patches * masks).sum(dim=1) / masks.sum(dim=1)
         return result
 
