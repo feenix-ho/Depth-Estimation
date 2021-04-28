@@ -23,7 +23,7 @@ class KnowledgeFusion(nn.Module):
             self.layers.append(InjectionBlock(
                 dims[idx], dims[idx], dims[idx + 1], max_patches, **kwargs))
 
-    def patching(self, locations, patch_size=self.patch_size):
+    def patching(self, locations, patch_size):
         locs = locations
         locs[:, :, :2] -= locs[:, :, :2] % patch_size
         locs[:, :, 2:] += (patch_size - locs[:, :, 2:] % patch_size)
