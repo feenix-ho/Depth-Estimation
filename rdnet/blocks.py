@@ -106,8 +106,8 @@ class InjectionBlock(nn.Module):
                                        transformer(dim=out_dim, depth=1)).cuda()
         self.proj = nn.Linear(inp_dim, out_dim).cuda()
         self.pos_emb = nn.Parameter(
-            torch.randn(1, int(max_patches), out_dim)).cuda()
-        self.cls_token = nn.Parameter(torch.randn(1, out_dim)).cuda()
+            torch.randn(1, int(max_patches), out_dim))
+        self.cls_token = nn.Parameter(torch.randn(1, out_dim))
 
         self.transformer = transformer(
             dim=out_dim, depth=1)
