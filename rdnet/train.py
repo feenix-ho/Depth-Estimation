@@ -391,7 +391,7 @@ def main_worker(gpu, ngpus_per_node, args):
     cudnn.benchmark = True
 
     dataloader = BtsDataLoader(args, 'train')
-    dataloader_eval = BtsDataLoader(args, 'online_eval')
+    dataloader_eval = None
 
     # Logging
     if not args.multiprocessing_distributed or (args.multiprocessing_distributed and args.rank % ngpus_per_node == 0):
