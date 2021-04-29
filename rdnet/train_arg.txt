@@ -18,3 +18,5 @@ num_threads = 1
 bts_size = 512
 end_learning_rate = -1
 variance_focus = 0.85
+checkpoint_path = checkpoint
+log_directory = model_log

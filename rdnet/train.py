@@ -76,7 +76,7 @@ class Arg_train:
         self.num_threads = int(config['num_threads'])  # 1
         self.data_path_eval = ''
         self.mode = 'train'
-        self.checkpoint_path = ''
+        self.checkpoint_path = config['checkpoint_path']
         self.fix_first_conv_blocks = True
         self.fix_first_conv_block = True
         self.bn_no_track_stats = True
@@ -85,9 +85,9 @@ class Arg_train:
         self.end_learning_rate = -1
         self.variance_focus = float(
             config['variance_focus'])  # 0.85
-        self.model_name = 'RDnet'
+        self.model_name = 'RDNet'
         self.gpu = 0
-        self.log_directory = ''
+        self.log_directory = config['log_directory']
         self.do_online_eval = False
         self.transformer = Nystromer
         self.multiprocessing_distributed = False
