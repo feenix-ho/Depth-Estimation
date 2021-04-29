@@ -88,32 +88,21 @@ def bbox_resize(location):
 class DataLoadPreprocess(Dataset):
     def __init__(self, args, mode, transform=None, is_for_online_eval=False):
         self.args = args
-        '''
-        if mode == 'online_eval':
-            with open(args.filenames_file_eval, 'r') as f:
-                self.filenames = f.readlines()
-        else:
-            with open(args.filenames_file, 'r') as f:
-                self.filenames = f.readlines()
-        '''
         if args.data_path[-1] != '/':
             args.data_path += '/'
 
         # load file names in 'custom_data_info.json'
-        open_file = open(args.data_path + 'custom_data_info.json')
-        self.filenames = json.load(open_file)['idx_to_files']
+        open_file = open(args.data_path + 'data.json')
+        d = json.load(open_file)
+        self.filenames = d['idx_to_' + mode + '_files']
+        self.idx_to_bbox_embed = d['idx_to_' + mode + '_bbox_embed']
         open_file.close()
-        print('Images: ', len(self.filenames))
+
+        self.images_path = args.data_path + 'nyu_' + mode + '/'
 
         self.bbox_embed_path = args.data_path + 'bbox_embed/'
-        path = self.bbox_embed_path
-        print('Bboxs & Embeddings: ', len(
-            [f for f in os.listdir(path)if os.path.isfile(os.path.join(path, f))]))
 
-        self.depths_path = args.data_path + 'nyu_depth/'
-        path = self.depths_path
-        print('Depths: ', len([f for f in os.listdir(
-            path)if os.path.isfile(os.path.join(path, f))]))
+        self.depths_path = args.data_path + 'nyu_depth_' + mode + '/'
 
         self.mode = mode
         self.transform = transform
@@ -122,29 +111,29 @@ class DataLoadPreprocess(Dataset):
 
     def __getitem__(self, idx):
         sample_path = self.filenames[idx]
+        idx_bbox_embed = self.idx_to_bbox_embed[idx]
         focal = float(idx)
         x = int(sample_path[4:-4])
         size = (384, 256)
 
         if self.mode == 'train':
-            image_path = os.path.join(
-                self.args.data_path, "./" + sample_path.split()[0])
+            # set path
+            image_path = self.images_path + sample_path
             depth_path = self.depths_path + str(x) + '.npz'
-            bbox_embed_path = self.bbox_embed_path + str(idx) + '.npz'
-            print(sample_path, depth_path)
-            # resize image
+            bbox_embed_path = self.bbox_embed_path + \
+                str(idx_bbox_embed) + '.npz'
+            # load & resize image
             image = Image.open(image_path).resize(size, Image.BICUBIC)
-
+            # oad depth
             f = np.load(depth_path)
             depth_gt = np.load(depth_path)['depth'].T
             f.close()
-
             # resize depth
             img_depth = depth_gt * 1000.0
             img_depth_uint16 = img_depth.astype(np.uint16)
             depth_gt = Image.fromarray(
                 img_depth_uint16).resize(size, Image.NEAREST)
-
+            # load bbox & embed
             f = np.load(bbox_embed_path)
             bbox = f['bbox']
             # resize bbox
@@ -152,32 +141,6 @@ class DataLoadPreprocess(Dataset):
             embedding = f['embed']
             f.close()
 
-            # test
-            '''
-            draw = ImageDraw.Draw(image)
-            for b in bbox:
-              x1,y1,x2,y2 = b
-              draw.rectangle(((x1, y1), (x2, y2)), outline='red')
-            display(image)
-            '''
-
-            '''
-            if self.args.do_kb_crop is True:
-                height = image.height
-                width = image.width
-                top_margin = int(height - 352)
-                left_margin = int((width - 1216) / 2)
-                depth_gt = depth_gt.crop(
-                    (left_margin, top_margin, left_margin + 1216, top_margin + 352))
-                image = image.crop(
-                    (left_margin, top_margin, left_margin + 1216, top_margin + 352))
-            '''
-            # To avoid blank boundaries due to pixel registration
-            '''
-            if self.args.dataset == 'nyu':
-                depth_gt = depth_gt.crop((43, 45, 608, 472))
-                image = image.crop((43, 45, 608, 472))
-            '''
             cropped_image = []
             for i in range(640):
                 x = []
@@ -187,13 +150,7 @@ class DataLoadPreprocess(Dataset):
                     else:
                         x.append(1)
                 cropped_image.append(x)
-            ''' 
-            if self.args.do_random_rotate is True:
-                random_angle = (random.random() - 0.5) * 2 * self.args.degree
-                image = self.rotate_image(image, random_angle)
-                depth_gt = self.rotate_image(
-                    depth_gt, random_angle, flag=Image.NEAREST)
-            '''
+
             image = np.asarray(image, dtype=np.float32) / 255.0
             depth_gt = np.asarray(depth_gt, dtype=np.float32)
             depth_gt = np.expand_dims(depth_gt, axis=2)
@@ -203,8 +160,6 @@ class DataLoadPreprocess(Dataset):
 
             depth_gt = depth_gt / 1000.0
 
-            # image, depth_gt = self.random_crop(
-            # image, depth_gt, self.args.input_height, self.args.input_width)
             image, depth_gt = self.train_preprocess(image, depth_gt)
             sample = {'image': image, 'depth': depth_gt,
                       'focal': focal, 'embedding': embedding,
@@ -216,7 +171,7 @@ class DataLoadPreprocess(Dataset):
             else:
                 data_path = self.args.data_path
 
-            image_path = os.path.join(data_path, "./" + sample_path.split()[0])
+            image_path = self.images_path + sample_path
             image = np.asarray(Image.open(image_path),
                                dtype=np.float32) / 255.0
 
