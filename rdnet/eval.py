@@ -67,7 +67,7 @@ def compute_reg(self, preds, targets, masks, num_scale=4):
 
 def compute_loss(self, preds, targets, masks, trimmed=1., num_scale=4, alpha=.5, **kwagrs):
     def align(imgs, masks):
-        
+        masks = rearrange(masks, 'b h w -> b (h w)')
         patches = rearrange(imgs, 'b h w -> b (h w)')
 
         t = patches.median(dim=1)

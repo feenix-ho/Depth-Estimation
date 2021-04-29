@@ -29,6 +29,8 @@ import torch.distributed as dist
 import torch.multiprocessing as mp
 
 from tensorboardX import SummaryWriter
+import configparser
+from nystrom_attention import Nystromer
 
 import matplotlib
 import matplotlib.cm
@@ -36,14 +38,8 @@ import threading
 from tqdm import tqdm
 
 from model import RDNet
-from bens_dataloader import *
-
-import configparser
-
-from nystrom_attention import Nystromer
-from reformer_pytorch import Reformer
-from routing_transformer import RoutingTransformer
-from linear_attention_transformer import LinearAttentionTransformer
+from eval import compute_errors, compute_loss
+from dataloader import *
 
 
 class Arg_train:
@@ -120,30 +116,6 @@ inv_normalize = transforms.Normalize(
 
 eval_metrics = ['silog', 'abs_rel', 'log10',
                 'rms', 'sq_rel', 'log_rms', 'd1', 'd2', 'd3']
-
-
-def compute_errors(gt, pred):
-    thresh = np.maximum((gt / pred), (pred / gt))
-    d1 = (thresh < 1.25).mean()
-    d2 = (thresh < 1.25 ** 2).mean()
-    d3 = (thresh < 1.25 ** 3).mean()
-
-    rms = (gt - pred) ** 2
-    rms = np.sqrt(rms.mean())
-
-    log_rms = (np.log(gt) - np.log(pred)) ** 2
-    log_rms = np.sqrt(log_rms.mean())
-
-    abs_rel = np.mean(np.abs(gt - pred) / gt)
-    sq_rel = np.mean(((gt - pred) ** 2) / gt)
-
-    err = np.log(pred) - np.log(gt)
-    silog = np.sqrt(np.mean(err ** 2) - np.mean(err) ** 2) * 100
-
-    err = np.abs(np.log10(pred) - np.log10(gt))
-    log10 = np.mean(err)
-
-    return [silog, abs_rel, log10, rms, sq_rel, log_rms, d1, d2, d3]
 
 
 def block_print():
@@ -441,7 +413,7 @@ def main_worker(gpu, ngpus_per_node, args):
 
             mask = depth_gt > 0.1
             # computeloss
-            loss = silog_criterion.forward(
+            loss = compute_loss(
                 depth_est, depth_gt, mask.to(torch.bool))
             loss.backward()
             for param_group in optimizer.param_groups:
