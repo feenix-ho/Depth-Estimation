@@ -37,10 +37,16 @@ class KnowledgeFusion(nn.Module):
         Params:
         Return:
         '''
+        embs = torch.cat([embs, embs.mean(dim=1, keep_dim=True)], dim=1)
         b, n, _ = embs.shape
+
         locs = self.patching(locations, patch_size=self.patch_size)
         masks = torch.zeros(patches.shape[:3], dtype=torch.bool).to(embs.device)
         masks = repeat(masks, 'b h w -> b n h w', n=n)
+
+        img_loc = torch.LongTensor([0, 0, patches.shape[1], patches.shape[2]])
+        img_locs = repeat(img_loc, 'd -> b n d', b=b, n=1)
+        locs = torch.cat([locs, img_locs], dim=1)
 
         for idx, loc in enumerate(locs):
             for jdx, obj_loc in enumerate(loc):

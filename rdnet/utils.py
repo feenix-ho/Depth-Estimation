@@ -65,12 +65,13 @@ def compute_reg(self, preds, targets, masks, num_scale=4):
     return total
 
 
-def compute_loss(self, trimmed=1., num_scale=4, alpha=.5, **kwagrs):
+def compute_loss(self, preds, targets, masks, trimmed=1., num_scale=4, alpha=.5, **kwagrs):
     def align(imgs, masks):
-        imgs = rearrange(imgs, 'b h w -> b (h w)')
+        
+        patches = rearrange(imgs, 'b h w -> b (h w)')
 
-        t = imgs.median(dim=1)
-        s = masks * torch.abs(imgs - t)
+        t = patches.median(dim=1)
+        s = masks * torch.abs(patches - t)
         s = s.sum(dim=1) / masks.sum(dim=1)
 
         return (imgs - t) / s
@@ -80,5 +81,5 @@ def compute_loss(self, trimmed=1., num_scale=4, alpha=.5, **kwagrs):
 
     loss = compute_ssi(preds, targets, masks, trimmed)
     if alpha > 0.:
-        loss += alpha * compute_reg(num_scale=num_scale, **kwargs)
+        loss += alpha * compute_reg(preds=preds, targets=targets, masks=masks, num_scale=num_scale, **kwargs)
     return loss.mean(dim=0)
