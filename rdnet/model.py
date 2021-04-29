@@ -37,7 +37,7 @@ class KnowledgeFusion(nn.Module):
         Params:
         Return:
         '''
-        embs = torch.cat([embs, embs.mean(dim=1, keep_dim=True)], dim=1)
+        embs = torch.cat([embs, embs.mean(1, True)], dim=1)
         b, n, _ = embs.shape
 
         locs = self.patching(locations, patch_size=self.patch_size)

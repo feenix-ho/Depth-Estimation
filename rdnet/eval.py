@@ -31,19 +31,17 @@ def compute_errors(gt, pred):
 
 def compute_ssi(self, preds, targets, masks, trimmed=1.):
     masks = rearrange(masks, 'b h w -> b (h w)')
+    errors = rearrange(torch.abs(preds - targets), 'b h w -> b (h w)')
+    b, n = masks.shape
     M = masks.sum(dim=1)
-
-    errors = torch.abs(aligned_preds - aligned_targets)[masks]
-    trimmed_errors = torch.sort(errors, dim=1)
-    ssi_trim = []
-
-    for i in range(M.shape[0]):
-        cutoff = trimmed * M[i]
-        error = trimmed_errors[i][masks[i]]
-        trimmed_error = error[:cutoff].sum()
-        ssi_trim.append(trimmed_error / M[i])
-
-    return torch.cat(ssi_trim)
+    
+    errors[1 - masks] = errors.max() + 1
+    sorted_errors = torch.sort(errors, dim=1)
+    cutoff = torch.LongTensor(trimmed * M)
+    idxs = repeat(torch.arange(end=n), 'n -> b n', b=b)
+    trimmed_errors = torch.where(idxs < cutoff, sorted_errors, torch.zeros((b, n)))
+    
+    return trimmed_errors.sum(dim=1) / M
 
 
 def compute_reg(self, preds, targets, masks, num_scale=4):
