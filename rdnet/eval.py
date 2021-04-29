@@ -29,25 +29,24 @@ def compute_errors(gt, pred):
     return silog, log10, abs_rel, sq_rel, rmse, rmse_log, d1, d2, d3
 
 
-def compute_ssi(self, preds, targets, masks, trimmed=1.):
-    masks = rearrange(masks, 'b h w -> b (h w)')
-    errors = rearrange(torch.abs(preds - targets), 'b h w -> b (h w)')
-    b, n = masks.shape
-    M = masks.sum(dim=1)
+def compute_ssi(preds, targets, masks, trimmed=1.):
+    masks = rearrange(masks, 'b c h w -> b c (h w)')
+    errors = rearrange(torch.abs(preds - targets), 'b c h w -> b c (h w)')
+    b, _, n = masks.shape
+    M = masks.sum(dim=2)
     
     errors[1 - masks] = errors.max() + 1
-    sorted_errors = torch.sort(errors, dim=1)
+    sorted_errors = torch.sort(errors, dim=2)
     cutoff = torch.LongTensor(trimmed * M)
-    idxs = repeat(torch.arange(end=n), 'n -> b n', b=b)
+    idxs = repeat(torch.arange(end=n), 'n -> b c n', b=b, c=1)
     trimmed_errors = torch.where(idxs < cutoff, sorted_errors, torch.zeros((b, n)))
-    
-    return trimmed_errors.sum(dim=1) / M
+
+    return trimmed_errors.sum(dim=2) / M
 
 
-def compute_reg(self, preds, targets, masks, num_scale=4):
+def compute_reg(preds, targets, masks, num_scale=4):
     def compute_grad(preds, targets, masks):
-        diff = repeat(preds - targets, 'b h w -> b c h w', c=1)
-        grads = filters.spatial_gradient(diff)
+        grads = filters.spatial_gradient(preds - targets)
         abs_grads = torch.abs(grads[:, 0, 0]) + torch.abs(grads[:, 0, 1])
         sum_grads = torch.sum(abs_grads * masks, (1, 2))
         return sum_grads / masks.sum((1, 2))
@@ -56,21 +55,18 @@ def compute_reg(self, preds, targets, masks, num_scale=4):
     step = 1
 
     for scale in range(num_scale):
-        total += compute_grad(preds[:, ::step, ::step],
-                              targets[:, ::step, ::step], masks[:, ::step, ::step])
+        total += compute_grad(preds[:, :, ::step, ::step],
+                              targets[:, :, ::step, ::step], masks[:, :, ::step, ::step])
         step *= 2
 
     return total
 
 
-def compute_loss(self, preds, targets, masks, trimmed=1., num_scale=4, alpha=.5, **kwagrs):
+def compute_loss(preds, targets, masks, trimmed=1., num_scale=4, alpha=.5, **kwagrs):
     def align(imgs, masks):
-        masks = rearrange(masks, 'b h w -> b (h w)')
-        patches = rearrange(imgs, 'b h w -> b (h w)')
-
-        t = patches.median(dim=1)
-        s = masks * torch.abs(patches - t)
-        s = s.sum(dim=1) / masks.sum(dim=1)
+        patches = rearrange(imgs * masks, 'b c h w -> b c (h w)').nonzero(as_tuple=False)
+        t = patches.median(dim=2)
+        s = torch.abs(patches - t).mean(dim=2)
 
         return (imgs - t) / s
 

@@ -44,7 +44,7 @@ class KnowledgeFusion(nn.Module):
         masks = torch.zeros(patches.shape[:3], dtype=torch.bool).to(embs.device)
         masks = repeat(masks, 'b h w -> b n h w', n=n)
 
-        img_loc = torch.LongTensor([0, 0, patches.shape[1], patches.shape[2]])
+        img_loc = torch.LongTensor([0, 0, patches.shape[1], patches.shape[2]]).to(locs.device)
         img_locs = repeat(img_loc, 'd -> b n d', b=b, n=1)
         locs = torch.cat([locs, img_locs], dim=1)
 
