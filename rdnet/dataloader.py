@@ -113,7 +113,7 @@ class DataLoadPreprocess(Dataset):
         sample_path = self.filenames[idx]
         idx_bbox_embed = self.idx_to_bbox_embed[idx]
         focal = float(idx)
-        x = int(sample_path[4:-4])
+        x = int(sample_path[:-4])
         size = (384, 256)
 
         if self.mode == 'train':

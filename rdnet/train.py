@@ -326,7 +326,6 @@ def main_worker(gpu, ngpus_per_node, args):
     best_eval_steps = np.zeros(9, dtype=np.int32)
 
     # Training parameters
-    # model.parameters()
     optimizer = torch.optim.AdamW(params=model.parameters(), weight_decay=args.weight_decay,
                                   lr=args.learning_rate, eps=args.adam_eps)
 
@@ -537,27 +536,6 @@ def main():
         args.model_name + '/' + sys.argv[0]
     command = 'cp ' + sys.argv[0] + ' ' + args_out_path
     os.system(command)
-
-    if args.checkpoint_path == '':
-        model_out_path = args.log_directory + '/' + \
-            args.model_name + '/' + model_filename
-        command = 'cp bts.py ' + model_out_path
-        os.system(command)
-        aux_out_path = args.log_directory + '/' + args.model_name + '/.'
-        command = 'cp bts_main.py ' + aux_out_path
-        os.system(command)
-        command = 'cp bts_dataloader.py ' + aux_out_path
-        os.system(command)
-    else:
-        loaded_model_dir = os.path.dirname(args.checkpoint_path)
-        loaded_model_name = os.path.basename(loaded_model_dir)
-        loaded_model_filename = loaded_model_name + '.py'
-
-        model_out_path = args.log_directory + '/' + \
-            args.model_name + '/' + model_filename
-        command = 'cp ' + loaded_model_dir + '/' + \
-            loaded_model_filename + ' ' + model_out_path
-        os.system(command)
 
     torch.cuda.empty_cache()
 
