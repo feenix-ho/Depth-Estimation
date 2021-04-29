@@ -79,5 +79,6 @@ def compute_loss(self, preds, targets, masks, trimmed=1., num_scale=4, alpha=.5,
 
     loss = compute_ssi(preds, targets, masks, trimmed)
     if alpha > 0.:
-        loss += alpha * compute_reg(preds=preds, targets=targets, masks=masks, num_scale=num_scale, **kwargs)
+        loss += alpha * compute_reg(preds=preds, targets=targets,
+                                    masks=masks, num_scale=num_scale, **kwargs)
     return loss.mean(dim=0)

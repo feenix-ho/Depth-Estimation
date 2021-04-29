@@ -378,8 +378,6 @@ def main_worker(gpu, ngpus_per_node, args):
             eval_summary_writer = SummaryWriter(
                 eval_summary_path, flush_secs=30)
 
-    silog_criterion = silog_loss(variance_focus=args.variance_focus)
-
     start_time = time.time()
     duration = 0
 
