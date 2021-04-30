@@ -42,7 +42,7 @@ def compute_ssi(preds, targets, masks, trimmed=1.):
     zeros = torch.zeros((b, n), device=sorted_errors.device)
     idxs = repeat(torch.arange(end=n, device=valids.device), 'n -> b c n', b=b, c=1)
     cutoff = (trimmed * valids) + invalids
-    trimmed_errors = torch.where(invalids <= idxs < cutoff, sorted_errors, zeros)
+    trimmed_errors = torch.where((invalids <= idxs) & (idxs < cutoff), sorted_errors, zeros)
 
     return trimmed_errors.sum(dim=2) / valids
 
