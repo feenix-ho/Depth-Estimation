@@ -407,8 +407,8 @@ def main_worker(gpu, ngpus_per_node, args):
             optimizer.step()
 
             print('[epoch][s/s_per_e/gs]: [{}][{}/{}/{}], lr: {:.12f}, loss: {:.12f}'.format(
-                epoch, step, steps_per_epoch, global_step, current_lr, loss))
-            if np.isnan(loss.cpu().item()):
+                epoch, step, steps_per_epoch, global_step, current_lr, loss[0]))
+            if np.isnan(loss[0].cpu().item()):
                 print('NaN in loss occurred. Aborting training.')
                 return -1
 
@@ -426,12 +426,12 @@ def main_worker(gpu, ngpus_per_node, args):
                 if not args.multiprocessing_distributed or (args.multiprocessing_distributed and args.rank % ngpus_per_node == 0):
                     print("{}".format(args.model_name))
                 print_string = 'GPU: {} | examples/s: {:4.2f} | loss: {:.5f} | var sum: {:.3f} avg: {:.3f} | time elapsed: {:.2f}h | time left: {:.2f}h'
-                print(print_string.format(args.gpu, examples_per_sec, loss, var_sum.item(
+                print(print_string.format(args.gpu, examples_per_sec, loss[0], var_sum.item(
                 ), var_sum.item()/var_cnt, time_sofar, training_time_left))
 
                 if not args.multiprocessing_distributed or (args.multiprocessing_distributed
                                                             and args.rank % ngpus_per_node == 0):
-                    writer.add_scalar('silog_loss', loss, global_step)
+                    writer.add_scalar('loss', loss[0], global_step)
                     writer.add_scalar('learning_rate', current_lr, global_step)
                     writer.add_scalar(
                         'var average', var_sum.item()/var_cnt, global_step)
