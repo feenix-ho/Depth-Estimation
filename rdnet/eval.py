@@ -47,9 +47,9 @@ def compute_ssi(preds, targets, masks, trimmed=1.):
 def compute_reg(preds, targets, masks, num_scale=4):
     def compute_grad(preds, targets, masks):
         grads = filters.spatial_gradient(preds - targets)
-        abs_grads = torch.abs(grads[:, 0, 0]) + torch.abs(grads[:, 0, 1])
-        sum_grads = torch.sum(abs_grads * masks, (1, 2))
-        return sum_grads / masks.sum((1, 2))
+        abs_grads = torch.abs(grads[:, :, 0]) + torch.abs(grads[:, :, 1])
+        sum_grads = torch.sum(abs_grads * masks, (2, 3))
+        return sum_grads / masks.sum((2, 3))
 
     total = 0
     step = 1
