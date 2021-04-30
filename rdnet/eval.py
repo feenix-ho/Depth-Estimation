@@ -67,8 +67,8 @@ def compute_loss(preds, targets, masks, trimmed=1., num_scale=4, alpha=.5, **kwa
         patches = rearrange(imgs, 'b c h w -> b c (h w)')
         meds = []
 
-        for patch, mask in zip(patches, masks):
-            med = torch.masked_select(patch, mask).median()
+        for img, mask in zip(imgs, masks):
+            med = torch.masked_select(img, mask).median()
             meds.append(med.unsqueeze(0))
 
         t = repeat(torch.cat(meds), 'b -> b c', c=1)
