@@ -65,7 +65,7 @@ def compute_reg(preds, targets, masks, num_scale=4):
     return total
 
 
-def compute_loss(preds, targets, masks, trimmed=1., num_scale=4, alpha=.5, **kwagrs):
+def compute_loss(preds, targets, masks, trimmed=1., num_scale=4, alpha=.5, **kwargs):
     def align(imgs, masks):
         patches = rearrange(imgs, 'b c h w -> b c (h w)')
         meds = []
