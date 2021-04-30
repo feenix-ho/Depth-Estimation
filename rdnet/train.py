@@ -530,7 +530,8 @@ def main():
 
     model_filename = args.model_name + '.py'
     command = 'mkdir ' + args.log_directory + '/' + args.model_name
-    os.system(command)
+    if not os.path.exists(args.log_directory + '/' + args.model_name):
+        os.system(command)
 
     args_out_path = args.log_directory + '/' + \
         args.model_name + '/' + sys.argv[0]
