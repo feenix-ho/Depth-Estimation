@@ -34,8 +34,8 @@ def compute_ssi(preds, targets, masks, trimmed=1.):
     errors = rearrange(torch.abs(preds - targets), 'b c h w -> b c (h w)')
     b, _, n = masks.shape
     M = masks.sum(dim=2)
-    
-    errors[1 - masks] = errors.max() + 1
+
+    errors[~masks] = errors.max() + 1
     sorted_errors = torch.sort(errors, dim=2)
     zeros = torch.zeros((b, n), device=sorted_errors.device)
     idxs = repeat(torch.arange(end=n, device=M.device), 'n -> b c n', b=b, c=1)
