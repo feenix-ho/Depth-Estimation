@@ -4,6 +4,7 @@ from torch import nn
 from einops import rearrange, repeat
 from kornia import filters
 
+EPS = 1e-3
 
 def compute_errors(gt, pred):
     thresh = np.maximum((gt / pred), (pred / gt))
@@ -33,15 +34,17 @@ def compute_ssi(preds, targets, masks, trimmed=1.):
     masks = rearrange(masks, 'b c h w -> b c (h w)')
     errors = rearrange(torch.abs(preds - targets), 'b c h w -> b c (h w)')
     b, _, n = masks.shape
-    M = masks.sum(dim=2)
+    valids = masks.sum(dim=2)
+    invalids = (~masks).sum(dim=2)
 
-    errors[~masks] = errors.max() + 1
+    errors -= (errors + EPS) * (~masks)
     sorted_errors, _ = torch.sort(errors, dim=2)
     zeros = torch.zeros((b, n), device=sorted_errors.device)
-    idxs = repeat(torch.arange(end=n, device=M.device), 'n -> b c n', b=b, c=1)
-    trimmed_errors = torch.where(idxs < (trimmed * M), sorted_errors, zeros)
+    idxs = repeat(torch.arange(end=n, device=valids.device), 'n -> b c n', b=b, c=1)
+    cutoff = (trimmed * valids) + invalids
+    trimmed_errors = torch.where(invalids <= idxs < cutoff, sorted_errors, zeros)
 
-    return trimmed_errors.sum(dim=2) / M
+    return trimmed_errors.sum(dim=2) / valids
 
 
 def compute_reg(preds, targets, masks, num_scale=4):
