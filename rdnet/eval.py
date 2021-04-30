@@ -35,7 +35,7 @@ def compute_ssi(preds, targets, masks, trimmed=1.):
     b, _, n = masks.shape
     M = masks.sum(dim=2)
 
-    errors[1 ~ masks] = errors.max() + 1
+    errors[~masks] = errors.max() + 1
     sorted_errors = torch.sort(errors, dim=2)
     cutoff = torch.LongTensor(trimmed * M)
     idxs = repeat(torch.arange(end=n), 'n -> b c n', b=b, c=1)
