@@ -95,20 +95,6 @@ DEVICE = torch.device('cuda')
 
 args = Arg_train()
 
-if args.mode == 'train' and not args.checkpoint_path:
-    from bts import *
-
-elif args.mode == 'train' and args.checkpoint_path:
-    model_dir = os.path.dirname(args.checkpoint_path)
-    model_name = os.path.basename(model_dir)
-    import sys
-    sys.path.append(model_dir)
-    for key, val in vars(__import__(model_name)).items():
-        if key.startswith('__') and key.endswith('__'):
-            continue
-        vars()[key] = val
-
-
 inv_normalize = transforms.Normalize(
     mean=[-0.485/0.229, -0.456/0.224, -0.406/0.225],
     std=[1/0.229, 1/0.224, 1/0.225]
