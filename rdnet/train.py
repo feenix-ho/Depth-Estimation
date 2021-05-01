@@ -287,6 +287,7 @@ def main_worker(gpu, ngpus_per_node, args):
     while epoch < args.num_epochs:
         print(epoch, '/', args.num_epochs)
         for step, sample_batched in enumerate(dataloader.data):
+            model.train()
             optimizer.zero_grad()
             before_op_time = time.time()
 
