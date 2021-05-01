@@ -181,7 +181,7 @@ class DataLoadPreprocess(Dataset):
 
             image = np.asarray(image, dtype=np.float32) / 255.0
             bbox = np.asarray(bbox, dtype=np.float32)
-            embedding = np.asarray(embedding, dtype=np.float32)            
+            embedding = np.asarray(embedding, dtype=np.float32)
 
             if self.mode == 'online_eval':
                 depth_path = self.depths_path + str(x) + '.npz'
@@ -191,11 +191,11 @@ class DataLoadPreprocess(Dataset):
                     f = np.load(depth_path)
                     depth_gt = np.load(depth_path)['depth'].T
                     f.close()
-                    i# resize depth
+                    i  # resize depth
                     img_depth = depth_gt * 1000.0
                     img_depth_uint16 = img_depth.astype(np.uint16)
                     depth_gt = Image.fromarray(
-                    img_depth_uint16).resize(size, Image.NEAREST)
+                        img_depth_uint16).resize(size, Image.NEAREST)
                     has_valid_depth = True
                 except IOError:
                     depth_gt = False
@@ -216,11 +216,10 @@ class DataLoadPreprocess(Dataset):
                     depth_gt = depth_gt / 1000.0
 
                 sample = {'image': image, 'depth': depth_gt, 'mask': mask,
-                      'embedding': embedding, 'bbox': bbox, 'valid': has_valid_depth
-                      }
+                          'embedding': embedding, 'bbox': bbox, 'valid': has_valid_depth
+                          }
             else:
                 sample = {'image': image, 'embedding': embedding, 'bbox': bbox}
-
 
         if self.transform:
             sample = self.transform(sample)
@@ -297,10 +296,14 @@ class ToTensor(object):
 
         mask = torch.BoolTensor(sample['mask'])
         depth = self.to_tensor(sample['depth'])
-        valid_depth = sample['valid']
+
+        if mode != 'train':
+            valid_depth = sample['valid']
+            return {'image': image, 'mask': mask, 'embedding': embedding,
+                    'bbox': bbox, 'depth': depth, 'valid': valid_depth}
+
         return {'image': image, 'mask': mask, 'embedding': embedding,
-                'bbox': bbox,'depth': depth, 'valid': valid_depth
-                }
+                'bbox': bbox, 'depth': depth}
 
     def to_tensor(self, pic):
         if not (_is_pil_image(pic) or _is_numpy_image(pic)):
