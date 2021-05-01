@@ -111,8 +111,8 @@ def online_eval(model, dataloader_eval, gpu, ngpus):
             image = eval_sample_batched['image'].to(DEVICE)
             gt_depth = eval_sample_batched['depth'].to(DEVICE)
             valid_depth = eval_sample_batched['valid']
-            embedding = sample_batched['embedding'].to(DEVICE)
-            location = sample_batched['bbox'].to(DEVICE)
+            embedding = eval_sample_batched['embedding'].to(DEVICE)
+            location = eval_sample_batched['bbox'].to(DEVICE)
 
             if not valid_depth:
                 # print('Invalid depth. continue.')
@@ -300,7 +300,7 @@ def main_worker(gpu, ngpus_per_node, args):
             mask = sample_batched['mask'].to(DEVICE)
 
             depth_est = model(
-            image, embedding, location)
+                image, embedding, location)
 
             # computeloss
             loss = compute_loss(depth_est, depth_gt, mask)
