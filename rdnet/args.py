@@ -38,14 +38,13 @@ class Arg_train:
         self.retrain = True
         self.eps = float(config['eps'])
         self.trimmed = float(config['trimmed'])
-        self.num_scale = float(config['num_scale'])
+        self.num_scale = int(config['num_scale'])
         self.alpha = float(config['alpha'])
         self.model_name = config['model']
         self.gpu = 0
         self.log_directory = config['log_directory']
         self.do_online_eval = True
         self.transformer = Nystromer
-        self.multiprocessing_distributed = False
         self.log_freq = int(config['log_freq'])  # 100
         self.save_freq = int(config['save_freq'])  # 500
         self.eval_summary_directory = ''
@@ -53,3 +52,4 @@ class Arg_train:
         self.max_depth_eval = float(config['max_depth_eval'])  # 80
         self.eval_freq = int(config['eval_freq'])  # 500
         self.eigen_crop = True
+        self.end_learning_rate = int(config['end_learning_rate'])  # -1

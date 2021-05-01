@@ -6,6 +6,7 @@ import numpy as np
 from einops import rearrange, repeat
 from kornia import filters
 
+
 def compute_errors(gt, pred):
     thresh = np.maximum((gt / pred), (pred / gt))
     d1 = (thresh < 1.25).mean()
