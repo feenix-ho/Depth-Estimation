@@ -304,7 +304,10 @@ def main_worker(gpu, ngpus_per_node, args):
                 image, embedding, location)
 
             # computeloss
-            loss = compute_loss(depth_est, depth_gt, mask)
+            try:
+                loss = compute_loss(depth_est, depth_gt, mask)
+            except:
+                print("Error here")
             loss.backward()
             for param_group in optimizer.param_groups:
                 current_lr = (args.learning_rate - end_learning_rate) * \
