@@ -114,14 +114,13 @@ class DataLoadPreprocess(Dataset):
     def __getitem__(self, idx):
         sample_path = self.filenames[idx]
         idx_bbox_embed = self.idx_to_bbox_embed[idx]
-        focal = float(idx)
-        x = int(sample_path[:-4])
+        filename = int(sample_path[:-4])
         size = (384, 256)
 
         if self.mode == 'train':
             # set path
             image_path = self.images_path + sample_path
-            depth_path = self.depths_path + str(x) + '.npz'
+            depth_path = self.depths_path + str(filename) + '.npz'
             bbox_embed_path = self.bbox_embed_path + \
                 str(idx_bbox_embed) + '.npz'
             # load & resize image
@@ -152,6 +151,7 @@ class DataLoadPreprocess(Dataset):
             mask = np.zeros(depth_gt.shape, dtype=bool)
             mask[45:471, 41:601] = 1
             depth_gt = depth_gt / 1000.0
+            assert depth_gt.mean() < .1
             mask &= depth_gt > .1
 
             image, depth_gt = self.train_preprocess(image, depth_gt)
