@@ -38,7 +38,7 @@ class Arg_train:
         self.retrain = True
         self.eps = float(config['eps'])
         self.trimmed = float(config['trimmed'])
-        self.num_scale = float(config['num_scale'])
+        self.num_scale = int(config['num_scale'])
         self.alpha = float(config['alpha'])
         self.model_name = config['model']
         self.gpu = 0
@@ -53,3 +53,4 @@ class Arg_train:
         self.max_depth_eval = float(config['max_depth_eval'])  # 80
         self.eval_freq = int(config['eval_freq'])  # 500
         self.eigen_crop = True
+        self.end_learning_rate = int(config['end_learning_rate'])  # -1
