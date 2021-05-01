@@ -23,6 +23,7 @@ import os
 import torch
 import torch.nn as nn
 import torch.nn.utils as utils
+import numpy as np
 
 import torch.backends.cudnn as cudnn
 import torch.distributed as dist
@@ -106,7 +107,7 @@ def normalize_result(value, vmin=None, vmax=None):
 
 def online_eval(model, dataloader_eval, gpu, ngpus):
     num_metrics = 10
-    eval_measures = torch.zeros(num_metrics + 1).to(DEVICE)
+    eval_measures = np.zeros(num_metrics + 1)
     for _, eval_sample_batched in enumerate(tqdm(dataloader_eval.data)):
         with torch.no_grad():
             image = eval_sample_batched['image'].to(DEVICE)
@@ -150,12 +151,10 @@ def online_eval(model, dataloader_eval, gpu, ngpus):
             valid_mask = np.logical_and(valid_mask, eval_mask)
 
         measures = loss, compute_errors(gt_depth[valid_mask], pred_depth[valid_mask])
-
-        eval_measures[:num_metrics] += torch.tensor(measures).to(DEVICE)
+        eval_measures[:num_metrics] += np.asarray(measures)
         eval_measures[num_metrics] += 1
 
-    eval_measures.to('cpu')
-    cnt = int(eval_measures[-1].item())
+    cnt = int(eval_measures[-1])
     eval_measures /= cnt
     print('Computing errors for {} eval samples'.format(cnt))
     print("{:>7}, {:>7}, {:>7}, {:>7}, {:>7}, {:>7}, {:>7}, {:>7}, {:>7}, {:>7}".format(
