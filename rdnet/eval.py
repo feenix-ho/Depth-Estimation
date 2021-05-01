@@ -1,6 +1,8 @@
 import torch
 from torch import nn
 
+import numpy as np
+
 from einops import rearrange, repeat
 from kornia import filters
 
@@ -82,7 +84,7 @@ def compute_loss(preds, targets, masks, trimmed=1., num_scale=4, alpha=.5, **kwa
         t = repeat(torch.cat(meds), 'b c -> b c d', d=1)
         masked_abs = torch.abs(patches - t) * patched_masks
         assert torch.isnan(masked_abs).sum() == 0
-        
+
         s = masked_abs.sum(2, True) / patched_masks.sum(2, True) + EPS
         try:
             assert 0 not in s
