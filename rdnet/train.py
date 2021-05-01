@@ -240,7 +240,7 @@ def main_worker(gpu, ngpus_per_node, args):
                   weight_decay=args.weight_decay,
                   adam_eps=args.adam_eps,
                   num_threads=args.num_threads,
-                  bts_size=args.bts_size,
+                  landmarks=args.landmarks,
                   end_learning_rate=args.end_learning_rate,
                   variance_focus=args.variance_focus,
                   transformer=args.transformer)

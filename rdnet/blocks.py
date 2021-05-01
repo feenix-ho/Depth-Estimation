@@ -98,19 +98,19 @@ class InjectionBlock(nn.Module):
         - transformer: the class of transformer to be used
     '''
 
-    def __init__(self, emb_size, inp_dim, out_dim, max_patches, use_readout, transformer, **kwargs):
+    def __init__(self, emb_size, inp_dim, out_dim, max_patches, use_readout, transformer, landmarks, **kwargs):
         super().__init__()
         self.readout = get_readout_oper(inp_dim=out_dim, out_dims=[
                                         out_dim], use_readout=use_readout, **kwargs)
         self.rel_trans = nn.Sequential(nn.Linear(emb_size, out_dim),
-                                       transformer(dim=out_dim, depth=1))
+                                       transformer(dim=out_dim, depth=1, num_landmarks=landmarks))
         self.proj = nn.Linear(inp_dim, out_dim)
         self.pos_emb = nn.Parameter(
             torch.randn(1, int(max_patches), out_dim))
         self.cls_token = nn.Parameter(torch.randn(1, out_dim))
 
         self.transformer = transformer(
-            dim=out_dim, depth=1)
+            dim=out_dim, depth=1, num_landmarks=landmarks)
 
     def forward(self, imgs, embs, masks):
         '''
@@ -155,7 +155,7 @@ class ScratchBlock(nn.Module):
         Params:
     '''
 
-    def __init__(self, hidden_dim, max_patches, hooks, use_readout, transformer, **kwargs):
+    def __init__(self, hidden_dim, max_patches, hooks, use_readout, transformer, landmarks, **kwargs):
         super().__init__()
         self.pos_emb = nn.Parameter(torch.randn(
             1, int(max_patches), hidden_dim))
@@ -166,7 +166,7 @@ class ScratchBlock(nn.Module):
         pre = 0
         for cur in hooks:
             self.transformers.append(transformer(
-                dim=hidden_dim, depth=cur - pre))
+                dim=hidden_dim, depth=cur - pre, num_landmarks=landmarks))
             pre = cur
 
     def forward(self, embs):

@@ -35,7 +35,7 @@ class Arg_train:
         self.fix_first_conv_blocks = True
         self.fix_first_conv_block = True
         self.bn_no_track_stats = True
-        self.bts_size = int(config['bts_size'])  # 512
+        self.landmarks = int(config['landmarks'])  # 512
         self.retrain = True
         self.end_learning_rate = -1
         self.variance_focus = float(
