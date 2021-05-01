@@ -1,4 +1,5 @@
 [COLAB]
+model = RDNet
 data_path = drive/MyDrive/dataset
 image_height = 256
 image_width = 384
@@ -16,8 +17,9 @@ weight_decay = 1e-2
 adam_eps = 1e-3
 num_threads = 1
 landmarks = 32
-end_learning_rate = -1
-variance_focus = 0.85
+trimmed = 0.8
+num_scale = 4
+alpha = 0.5
 checkpoint_path = 
 log_directory = model_log
 min_depth_eval = 1e-3

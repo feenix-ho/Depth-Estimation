@@ -68,7 +68,7 @@ def compute_reg(preds, targets, masks, num_scale=4):
                               targets[:, :, ::step, ::step], masks[:, :, ::step, ::step])
         step *= 2
 
-    return total / num_scale
+    return total
 
 
 def compute_loss(preds, targets, masks, trimmed=1., num_scale=4, alpha=.5, **kwargs):
@@ -104,7 +104,7 @@ def compute_loss(preds, targets, masks, trimmed=1., num_scale=4, alpha=.5, **kwa
     assert torch.isnan(aligned_preds).sum() == 0
     assert torch.isnan(aligned_targets).sum() == 0
 
-    loss = compute_ssi(aligned_preds, aligned_targets, masks, trimmed)
+    loss = compute_ssi(aligned_preds, aligned_targets, masks, trimmed) / 2
     assert torch.isnan(loss).sum() == 0
     if alpha > 0.:
         loss += alpha * compute_reg(aligned_preds, aligned_targets,

@@ -301,7 +301,8 @@ def main_worker(gpu, ngpus_per_node, args):
                 image, embedding, location)
 
             # computeloss
-            loss = compute_loss(depth_est, depth_gt, mask)
+            loss = compute_loss(depth_est, depth_gt, mask,
+                                trimmed=args.trimmed, num_scale=args.num_scale, alpha=args.alpha)
             assert 0 not in loss
             loss.backward()
 

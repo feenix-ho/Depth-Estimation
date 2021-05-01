@@ -36,10 +36,10 @@ class Arg_train:
         self.checkpoint_path = config['checkpoint_path']
         self.landmarks = int(config['landmarks'])  # 512
         self.retrain = True
-        self.end_learning_rate = -1
-        self.variance_focus = float(
-            config['variance_focus'])  # 0.85
-        self.model_name = 'RDNet'
+        self.trimmed = float(config['trimmed'])
+        self.num_scale = float(config['num_scale'])
+        self.alpha = float(config['alpha'])
+        self.model_name = config['model']
         self.gpu = 0
         self.log_directory = config['log_directory']
         self.do_online_eval = True
