@@ -1,5 +1,7 @@
 import configparser
 
+from nystrom_attention import Nystromer
+
 
 class Arg_train:
     def __init__(self):
