@@ -96,7 +96,7 @@ def compute_loss(preds, targets, masks, trimmed=1., num_scale=4, alpha=.5, **kwa
 
         return (imgs - t.unsqueeze(3)) / s.unsqueeze(3)
 
-    assert masks.sum() > EPS
+    assert preds.sum() > EPS
     aligned_preds = align(preds, masks)
     aligned_targets = align(targets, masks)
     assert torch.isnan(aligned_preds).sum() == 0

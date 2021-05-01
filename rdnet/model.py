@@ -144,7 +144,10 @@ class RDNet(nn.Module):
         patches = self.knowledge(patches, embs, locations)
         results = self.dense(patches)
         results = self.head(results)
-
+        try:
+            assert results.sum() > 1e-3
+        except:
+            print(results)
         return F.interpolate(
             results,
             size=images.shape[2:4],
