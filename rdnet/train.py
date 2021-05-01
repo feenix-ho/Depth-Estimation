@@ -297,12 +297,12 @@ def main_worker(gpu, ngpus_per_node, args):
             depth_gt = sample_batched['depth'].to(DEVICE)
             embedding = sample_batched['embedding'].to(DEVICE)
             location = sample_batched['bbox'].to(DEVICE)
-            cropped_image = sample_batched['cropped_image'].to(DEVICE)
+            mask = sample_batched['mask'].to(DEVICE)
 
             depth_est = model(
                 image, embedding, location)
 
-            mask = depth_gt > 0.1
+            mask &= depth_gt > 0.1
             # computeloss
             loss = compute_loss(
                 depth_est, depth_gt, mask.to(torch.bool))

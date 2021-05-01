@@ -126,7 +126,7 @@ class DataLoadPreprocess(Dataset):
                 str(idx_bbox_embed) + '.npz'
             # load & resize image
             image = Image.open(image_path).resize(size, Image.BICUBIC)
-            # oad depth
+            # load depth
             f = np.load(depth_path)
             depth_gt = np.load(depth_path)['depth'].T
             f.close()
@@ -151,8 +151,8 @@ class DataLoadPreprocess(Dataset):
 
             mask = np.zeros(depth_gt.shape)
             mask[45:471, 41:601] = 1
-
             depth_gt = depth_gt / 1000.0
+            mask &= depth_gt > .1
 
             image, depth_gt = self.train_preprocess(image, depth_gt)
             sample = {'image': image, 'depth': depth_gt,
@@ -160,31 +160,42 @@ class DataLoadPreprocess(Dataset):
                       }
 
         else:
-            # image
+            # set path
             image_path = self.images_path + sample_path
-            image = Image.open(image_path).resize(size, Image.BICUBIC)
-            image = np.asarray(image, dtype=np.float32) / 255.0
-
-            # bbox & embed
             bbox_embed_path = self.bbox_embed_path + \
                 str(idx_bbox_embed) + '.npz'
+            # load & resize image
+            image = Image.open(image_path).resize(size, Image.BICUBIC)
+            # resize depth
+            img_depth = depth_gt * 1000.0
+            img_depth_uint16 = img_depth.astype(np.uint16)
+            depth_gt = Image.fromarray(
+                img_depth_uint16).resize(size, Image.NEAREST)
+            # load bbox & embed
             f = np.load(bbox_embed_path)
             bbox = f['bbox']
+            # resize bbox
             bbox = np.apply_along_axis(bbox_resize, 1, bbox)
             embedding = f['embed']
             f.close()
 
+            image = np.asarray(image, dtype=np.float32) / 255.0
+            bbox = np.asarray(bbox, dtype=np.float32)
+            embedding = np.asarray(embedding, dtype=np.float32)            
+
             if self.mode == 'online_eval':
-                gt_path = self.depths_path + str(x) + '.npz'
+                depth_path = self.depths_path + str(x) + '.npz'
                 has_valid_depth = False
                 try:
+                    # load depth
                     f = np.load(depth_path)
                     depth_gt = np.load(depth_path)['depth'].T
                     f.close()
+                    i# resize depth
                     img_depth = depth_gt * 1000.0
                     img_depth_uint16 = img_depth.astype(np.uint16)
                     depth_gt = Image.fromarray(
-                        img_depth_uint16).resize(size, Image.NEAREST)
+                    img_depth_uint16).resize(size, Image.NEAREST)
                     has_valid_depth = True
                 except IOError:
                     depth_gt = False
@@ -193,26 +204,23 @@ class DataLoadPreprocess(Dataset):
                 if has_valid_depth:
                     depth_gt = np.asarray(depth_gt, dtype=np.float32)
                     depth_gt = np.expand_dims(depth_gt, axis=2)
+
+                    mask = np.zeros(depth_gt.shape)
+                    mask[45:471, 41:601] = 1
                     depth_gt = depth_gt / 1000.0
-            '''
-            if self.args.do_kb_crop is True:
-                height = image.shape[0]
-                width = image.shape[1]
-                top_margin = int(height - 352)
-                left_margin = int((width - 1216) / 2)
-                image = image[top_margin:top_margin + 352,
-                              left_margin:left_margin + 1216, :]
-                if self.mode == 'online_eval' and has_valid_depth:
-                    depth_gt = depth_gt[top_margin:top_margin +
-                                        352, left_margin:left_margin + 1216, :]
-            '''
-            if self.mode == 'online_eval':
+                    mask &= depth_gt > .1
+
+                    image, depth_gt = self.train_preprocess(image, depth_gt)
+                    depth_gt = np.asarray(depth_gt, dtype=np.float32)
+                    depth_gt = np.expand_dims(depth_gt, axis=2)
+                    depth_gt = depth_gt / 1000.0
+
                 sample = {'image': image, 'depth': depth_gt,
-                          'embedding': embedding, 'bbox': bbox,
-                          'focal': focal, 'has_valid_depth': has_valid_depth}
+                      'embedding': embedding, 'bbox': bbox, 'mask': mask
+                      }
             else:
-                sample = {'image': image, 'focal': focal,
-                          'embedding': embedding, 'bbox': bbox, }
+                sample = {'image': image, 'embedding': embedding, 'bbox': bbox}
+
 
         if self.transform:
             sample = self.transform(sample)
@@ -281,13 +289,13 @@ class ToTensor(object):
     def __call__(self, sample):
         image = self.to_tensor(sample['image'])
         image = self.normalize(image)
-        mask = sample['mask']
         embedding = torch.Tensor(sample['embedding'])
         bbox = torch.Tensor(sample['bbox'], dtype=torch.long)
 
         if self.mode == 'test':
-            return {'image': image, 'mask': mask, 'embedding': embedding, 'bbox': bbox}
+            return {'image': image, 'embedding': embedding, 'bbox': bbox}
 
+        mask = sample['mask']
         depth = self.to_tensor(sample['depth'])
         return {'image': image, 'mask': mask, 'embedding': embedding, 'bbox': bbox, 'depth': depth}
 
