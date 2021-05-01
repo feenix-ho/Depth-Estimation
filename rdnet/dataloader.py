@@ -151,7 +151,6 @@ class DataLoadPreprocess(Dataset):
             mask = np.zeros(depth_gt.shape, dtype=bool)
             mask[45:471, 41:601] = 1
             depth_gt = depth_gt / 1000.0
-            assert depth_gt.mean() < .1
             mask &= depth_gt > .1
 
             image, depth_gt = self.train_preprocess(image, depth_gt)

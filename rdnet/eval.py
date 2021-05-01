@@ -46,10 +46,10 @@ def compute_ssi(preds, targets, masks, trimmed=1.):
     trimmed_errors = torch.where((invalids <= idxs) & (
         idxs < cutoff), sorted_errors, sorted_errors - sorted_errors)
 
-    if 0 in valids:
-        print(invalids)
-        print(valids)
-        assert True
+    try:
+        temp = (trimmed_errors / valids)
+    except:
+        print("Error here")
     return (trimmed_errors / valids).sum(dim=2)
 
 
@@ -77,7 +77,6 @@ def compute_loss(preds, targets, masks, trimmed=1., num_scale=4, alpha=.5, **kwa
         meds = []
 
         for img, mask in zip(imgs, masks):
-            assert mask.sum() < EPS
             med = torch.masked_select(img, mask).median(0, True)[0]
             meds.append(med.unsqueeze(1))
 
