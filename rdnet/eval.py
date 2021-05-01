@@ -74,7 +74,7 @@ def compute_loss(preds, targets, masks, trimmed=1., num_scale=4, alpha=.5, **kwa
             med = torch.masked_select(img, mask).median()
             meds.append(med.unsqueeze(0))
 
-        t = repeat(torch.cat(meds), 'b -> b c', c=1)
+        t = repeat(torch.cat(meds), 'b -> b c c', c=1)
         s = torch.abs(patches - t).mean(dim=2)
 
         return (imgs - t) / s
