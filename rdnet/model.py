@@ -140,16 +140,16 @@ class RDNet(nn.Module):
         )
 
     def forward(self, images, embs, locations):
-        assert images.sum() > 1e-3
+        assert (images * images).sum() > 1e-3
         patches = self.to_patch(images)
-        assert patches.sum() > 1e-3
+        assert (patches * patches).sum() > 1e-3
         patches = self.knowledge(patches, embs, locations)
-        assert patches.sum() > 1e-3
+        assert (patches * patches).sum() > 1e-3
         results = self.dense(patches)
-        assert results.sum() > 1e-3
+        assert (results * results).sum() > 1e-3
         results = self.head(results)
         try:
-            assert results.sum() > 1e-3
+            assert (results * results).sum() > 1e-3
         except:
             print(results)
         return F.interpolate(
