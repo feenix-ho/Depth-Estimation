@@ -106,7 +106,6 @@ def normalize_result(value, vmin=None, vmax=None):
 
 def online_eval(model, dataloader_eval, gpu, ngpus):
     eval_measures = torch.zeros(10).to(DEVICE)
-    model.eval()
     for _, eval_sample_batched in enumerate(tqdm(dataloader_eval.data)):
         with torch.no_grad():
             image = eval_sample_batched['image'].to(DEVICE)
@@ -197,7 +196,7 @@ def main_worker(gpu, ngpus_per_node, args):
                   end_learning_rate=args.end_learning_rate,
                   variance_focus=args.variance_focus,
                   transformer=args.transformer)
-
+    model.train()
     num_params = sum([np.prod(p.size()) for p in model.parameters()])
     print("Total number of parameters: {}".format(num_params))
 
@@ -287,7 +286,6 @@ def main_worker(gpu, ngpus_per_node, args):
     while epoch < args.num_epochs:
         print(epoch, '/', args.num_epochs)
         for step, sample_batched in enumerate(dataloader.data):
-            model.train()
             optimizer.zero_grad()
             before_op_time = time.time()
 
@@ -360,6 +358,7 @@ def main_worker(gpu, ngpus_per_node, args):
                            args.model_name + '/model-{}'.format(global_step))
 
             if args.do_online_eval and global_step and global_step % args.eval_freq == 0 and not model_just_loaded:
+                model.eval()
                 eval_measures = online_eval(
                     model, dataloader_eval, gpu, ngpus_per_node)
 
@@ -403,6 +402,7 @@ def main_worker(gpu, ngpus_per_node, args):
                             torch.save(checkpoint, args.log_directory +
                                        '/' + args.model_name + model_save_name)
                     eval_summary_writer.flush()
+                model.train()
                 block_print()
                 enable_print()
 
