@@ -35,8 +35,8 @@ def compute_ssi(preds, targets, masks, trimmed=1.):
     masks = rearrange(masks, 'b c h w -> b c (h w)')
     errors = rearrange(torch.abs(preds - targets), 'b c h w -> b c (h w)')
     b, _, n = masks.shape
-    valids = masks.sum(dim=2)
-    invalids = (~masks).sum(dim=2)
+    valids = masks.sum(2, True)
+    invalids = (~masks).sum(2, True)
 
     errors -= (errors + EPS) * (~masks)
     sorted_errors, _ = torch.sort(errors, dim=2)
@@ -46,7 +46,7 @@ def compute_ssi(preds, targets, masks, trimmed=1.):
     trimmed_errors = torch.where((invalids <= idxs) & (
         idxs < cutoff), sorted_errors, sorted_errors - sorted_errors)
 
-    return trimmed_errors.sum(dim=2) / valids
+    return (trimmed_errors / valids).sum(dim=2)
 
 
 def compute_reg(preds, targets, masks, num_scale=4):
