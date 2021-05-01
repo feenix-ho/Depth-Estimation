@@ -199,15 +199,7 @@ class DataLoadPreprocess(Dataset):
                 if has_valid_depth:
                     depth_gt = np.asarray(depth_gt, dtype=np.float32)
                     depth_gt = np.expand_dims(depth_gt, axis=2)
-
-                    mask = np.zeros(depth_gt.shape, dtype=bool)
-                    mask[45:471, 41:601] = 1
                     depth_gt = depth_gt / 1000.0
-                    mask &= depth_gt > .1
-
-                    image, depth_gt = self.train_preprocess(image, depth_gt)
-                    depth_gt = np.asarray(depth_gt, dtype=np.float32)
-                    depth_gt = np.expand_dims(depth_gt, axis=2)
 
                 sample = {'image': image, 'depth': depth_gt, 'mask': mask,
                           'embedding': embedding, 'bbox': bbox, 'valid': has_valid_depth
