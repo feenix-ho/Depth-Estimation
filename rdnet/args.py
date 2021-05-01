@@ -31,7 +31,6 @@ class Arg_train:
         self.weight_decay = float(config['weight_decay'])  # 1e-2
         self.adam_eps = float(config['adam_eps'])  # 1e-3
         self.num_threads = int(config['num_threads'])  # 1
-        self.data_path_eval = ''
         self.mode = 'train'
         self.checkpoint_path = config['checkpoint_path']
         self.landmarks = int(config['landmarks'])  # 512
