@@ -165,11 +165,6 @@ class DataLoadPreprocess(Dataset):
                 str(idx_bbox_embed) + '.npz'
             # load & resize image
             image = Image.open(image_path).resize(size, Image.BICUBIC)
-            # resize depth
-            img_depth = depth_gt * 1000.0
-            img_depth_uint16 = img_depth.astype(np.uint16)
-            depth_gt = Image.fromarray(
-                img_depth_uint16).resize(size, Image.NEAREST)
             # load bbox & embed
             f = np.load(bbox_embed_path)
             bbox = f['bbox']
@@ -190,7 +185,7 @@ class DataLoadPreprocess(Dataset):
                     f = np.load(depth_path)
                     depth_gt = np.load(depth_path)['depth'].T
                     f.close()
-                    i  # resize depth
+                    # resize depth
                     img_depth = depth_gt * 1000.0
                     img_depth_uint16 = img_depth.astype(np.uint16)
                     depth_gt = Image.fromarray(
