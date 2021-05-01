@@ -143,22 +143,15 @@ class DataLoadPreprocess(Dataset):
             embedding = f['embed']
             f.close()
 
-            cropped_image = []
-            for i in range(640):
-                x = []
-                for j in range(480):
-                    if i < 43 or i > 608 or j < 45 or j > 472:
-                        x.append(0)
-                    else:
-                        x.append(1)
-                cropped_image.append(x)
-
             image = np.asarray(image, dtype=np.float32) / 255.0
             depth_gt = np.asarray(depth_gt, dtype=np.float32)
             depth_gt = np.expand_dims(depth_gt, axis=2)
             cropped_image = np.asarray(cropped_image, dtype=np.float32)
             bbox = np.asarray(bbox, dtype=np.float32)
             embedding = np.asarray(embedding, dtype=np.float32)
+
+            cropped_image = np.zeros(depth_gt.shape)
+            cropped_image[45:471, 41:601] = 1
 
             depth_gt = depth_gt / 1000.0
 
