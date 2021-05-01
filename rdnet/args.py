@@ -45,7 +45,6 @@ class Arg_train:
         self.log_directory = config['log_directory']
         self.do_online_eval = True
         self.transformer = Nystromer
-        self.multiprocessing_distributed = False
         self.log_freq = int(config['log_freq'])  # 100
         self.save_freq = int(config['save_freq'])  # 500
         self.eval_summary_directory = ''
