@@ -89,6 +89,7 @@ def compute_loss(preds, targets, masks, trimmed=1., num_scale=4, alpha=.5, **kwa
         except:
             print("Masked absolute: ", masked_abs[s < EPS])
             print("Patches: ", patches[s < EPS])
+            assert False
         assert torch.isnan(s).sum() == 0
         temp = (imgs - t.unsqueeze(3)) / s
         assert torch.isnan(temp).sum() == 0
