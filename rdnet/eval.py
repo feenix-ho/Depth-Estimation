@@ -46,6 +46,7 @@ def compute_ssi(preds, targets, masks, trimmed=1.):
     trimmed_errors = torch.where((invalids <= idxs) & (
         idxs < cutoff), sorted_errors, sorted_errors - sorted_errors)
 
+    assert 0 in valids
     if 0 in valids:
         print(invalids)
         print(valids)
@@ -73,11 +74,11 @@ def compute_reg(preds, targets, masks, num_scale=4):
 
 def compute_loss(preds, targets, masks, trimmed=1., num_scale=4, alpha=.5, **kwargs):
     def align(imgs, masks):
-        b, _, h, w = imgs.shape
         patches = rearrange(imgs, 'b c h w -> b c (h w)')
         meds = []
 
         for img, mask in zip(imgs, masks):
+            assert mask.sum() < EPS
             med = torch.masked_select(img, mask).median(0, True)[0]
             meds.append(med.unsqueeze(1))
 
