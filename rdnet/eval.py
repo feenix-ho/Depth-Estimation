@@ -40,12 +40,14 @@ def compute_ssi(preds, targets, masks, trimmed=1.):
 
     errors -= (errors + EPS) * (~masks)
     sorted_errors, _ = torch.sort(errors, dim=2)
+    assert torch.isnan(sorted_errors).sum() == 0
     idxs = repeat(torch.arange(end=n, device=valids.device),
                   'n -> b c n', b=b, c=1)
     cutoff = (trimmed * valids) + invalids
     trimmed_errors = torch.where((invalids <= idxs) & (
         idxs < cutoff), sorted_errors, sorted_errors - sorted_errors)
 
+    assert torch.isnan(trimmed_errors).sum() == 0
     return (trimmed_errors / valids).sum(dim=2)
 
 
@@ -54,7 +56,6 @@ def compute_reg(preds, targets, masks, num_scale=4):
         grads = filters.spatial_gradient(preds - targets)
         abs_grads = torch.abs(grads[:, :, 0]) + torch.abs(grads[:, :, 1])
         sum_grads = torch.sum(abs_grads * masks, (2, 3))
-        assert 0 not in masks.sum((2, 3))
         return sum_grads / masks.sum((2, 3))
 
     total = 0
@@ -65,7 +66,7 @@ def compute_reg(preds, targets, masks, num_scale=4):
                               targets[:, :, ::step, ::step], masks[:, :, ::step, ::step])
         step *= 2
 
-    return total
+    return total / num_scale
 
 
 def compute_loss(preds, targets, masks, trimmed=1., num_scale=4, alpha=.5, **kwargs):
@@ -89,5 +90,5 @@ def compute_loss(preds, targets, masks, trimmed=1., num_scale=4, alpha=.5, **kwa
     if alpha > 0.:
         loss += alpha * compute_reg(aligned_preds, aligned_targets,
                                     masks, num_scale)
-    assert 0 not in loss
+    assert torch.isnan(loss).sum() == 0
     return loss.mean(dim=0)
