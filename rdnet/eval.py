@@ -80,17 +80,13 @@ def compute_loss(preds, targets, masks, trimmed=1., num_scale=4, alpha=.5, **kwa
 
         t = repeat(torch.cat(meds), 'b c -> b c d', d=1)
         s = torch.abs(patches - t).mean(2, True)
-        
-        assert torch.isnan(t).sum() == 0
-        assert torch.isnan(s).sum() == 0
+
+        assert 0 not in s
         temp = (imgs - t.unsqueeze(3)) / s.unsqueeze(3)
         assert torch.isnan(temp).sum() == 0
 
         return (imgs - t.unsqueeze(3)) / s.unsqueeze(3)
 
-    assert torch.isnan(preds).sum() == 0
-    assert torch.isnan(targets).sum() == 0
-    assert torch.isnan(masks).sum() == 0
     aligned_preds = align(preds, masks)
     aligned_targets = align(targets, masks)
     assert torch.isnan(aligned_preds).sum() == 0
