@@ -88,6 +88,8 @@ def bbox_resize(location):
 class DataLoadPreprocess(Dataset):
     def __init__(self, args, mode, transform=None, is_for_online_eval=False):
         self.args = args
+        self.mode = mode
+
         if args.data_path[-1] != '/':
             args.data_path += '/'
         if mode == 'online_eval':
@@ -106,7 +108,6 @@ class DataLoadPreprocess(Dataset):
 
         self.depths_path = args.data_path + 'nyu_depth_' + mode + '/'
 
-        self.mode = mode
         self.transform = transform
         self.to_tensor = ToTensor
         self.is_for_online_eval = is_for_online_eval
