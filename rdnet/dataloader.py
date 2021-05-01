@@ -288,14 +288,15 @@ class ToTensor(object):
         if self.mode == 'test':
             return {'image': image, 'embedding': embedding, 'bbox': bbox}
 
-        mask = self.to_tensor(sample['mask']).to(torch.bool)
         depth = self.to_tensor(sample['depth'])
 
         if self.mode != 'train':
             valid_depth = sample['valid']
-            return {'image': image, 'mask': mask, 'embedding': embedding,
-                    'bbox': bbox, 'depth': depth, 'valid': valid_depth}
 
+            return {'image': image, 'embedding': embedding,
+                    'bbox': bbox, 'depth': depth, 'valid': valid_depth}
+        else:
+            mask = self.to_tensor(sample['mask']).to(torch.bool)
         return {'image': image, 'mask': mask, 'embedding': embedding,
                 'bbox': bbox, 'depth': depth}
 
