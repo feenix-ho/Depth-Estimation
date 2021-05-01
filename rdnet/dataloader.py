@@ -128,7 +128,7 @@ class DataLoadPreprocess(Dataset):
             image = Image.open(image_path).resize(size, Image.BICUBIC)
             # oad depth
             f = np.load(depth_path)
-            depth_gt = np.load(depth_path)['depth'].T
+            depth_gt = f['depth'].T
             f.close()
             # resize depth
             img_depth = depth_gt * 1000.0
