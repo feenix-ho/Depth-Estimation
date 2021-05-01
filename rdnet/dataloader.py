@@ -179,7 +179,7 @@ class DataLoadPreprocess(Dataset):
             embedding = np.asarray(embedding, dtype=np.float32)
 
             if self.mode == 'online_eval':
-                depth_path = self.depths_path + str(x) + '.npz'
+                depth_path = self.depths_path + str(filename) + '.npz'
                 has_valid_depth = False
                 try:
                     # load depth
