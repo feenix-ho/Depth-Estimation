@@ -289,7 +289,7 @@ class ToTensor(object):
     def __call__(self, sample):
         image, focal = sample['image'], sample['focal']
         embedding, bbox = sample['embedding'], sample['bbox']
-        cropped_image = sample['embedding']
+        cropped_image = sample['cropped_image']
         image = self.to_tensor(image)
         image = self.normalize(image)
 
