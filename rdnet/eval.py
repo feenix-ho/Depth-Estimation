@@ -70,17 +70,18 @@ def compute_reg(preds, targets, masks, num_scale=4):
 
 def compute_loss(preds, targets, masks, trimmed=1., num_scale=4, alpha=.5, **kwargs):
     def align(imgs, masks):
+        b, _, h, w = imgs.shape
         patches = rearrange(imgs, 'b c h w -> b c (h w)')
         meds = []
 
         for img, mask in zip(imgs, masks):
-            med = torch.masked_select(img, mask).median()
-            meds.append(med.unsqueeze(0))
+            med = torch.masked_select(img, mask).median(0, True)
+            meds.append(med.unsqueeze(1))
 
-        t = repeat(torch.cat(meds), 'b -> b c d', c=1, d=1)
-        s = torch.abs(patches - t).mean(dim=2)
+        t = repeat(torch.cat(meds), 'b c -> b c d', d=1)
+        s = torch.abs(patches - t).mean(2, True)
 
-        return (imgs - t) / s
+        return (imgs - t.unsqueeze(3)) / s.unsqueeze(3)
 
     aligned_preds = align(preds, masks)
     aligned_targets = align(targets, masks)
