@@ -108,29 +108,20 @@ def online_eval(model, dataloader_eval, gpu, ngpus):
     eval_measures = torch.zeros(10).cuda(device=gpu)
     for _, eval_sample_batched in enumerate(tqdm(dataloader_eval.data)):
         with torch.no_grad():
-            image = torch.autograd.Variable(
-                eval_sample_batched['image'].cuda(gpu, non_blocking=True))
-            focal = torch.autograd.Variable(
-                eval_sample_batched['focal'].cuda(gpu, non_blocking=True))
-            gt_depth = eval_sample_batched['depth']
+            image = eval_sample_batched['image'].to(DEVICE)
+            gt_depth = eval_sample_batched['depth'].to(DEVICE)
             has_valid_depth = eval_sample_batched['has_valid_depth']
+
+            embedding = sample_batched['embedding'].to(DEVICE)
+            location = sample_batched['bbox'].to(DEVICE)
             if not has_valid_depth:
                 # print('Invalid depth. continue.')
                 continue
 
-            _, _, _, _, pred_depth = model(image, focal)
+            pred_depth = model(image, embedding, location)
 
             pred_depth = pred_depth.cpu().numpy().squeeze()
             gt_depth = gt_depth.cpu().numpy().squeeze()
-
-        if args.do_kb_crop:
-            height, width = gt_depth.shape
-            top_margin = int(height - 352)
-            left_margin = int((width - 1216) / 2)
-            pred_depth_uncropped = np.zeros((height, width), dtype=np.float32)
-            pred_depth_uncropped[top_margin:top_margin + 352,
-                                 left_margin:left_margin + 1216] = pred_depth
-            pred_depth = pred_depth_uncropped
 
         pred_depth[pred_depth < args.min_depth_eval] = args.min_depth_eval
         pred_depth[pred_depth > args.max_depth_eval] = args.max_depth_eval
@@ -159,7 +150,7 @@ def online_eval(model, dataloader_eval, gpu, ngpus):
 
         measures = compute_errors(gt_depth[valid_mask], pred_depth[valid_mask])
 
-        eval_measures[:9] += torch.tensor(measures).cuda(device=gpu)
+        eval_measures[:9] += torch.tensor(measures).to(DEVICE)
         eval_measures[9] += 1
 
     if args.multiprocessing_distributed:
