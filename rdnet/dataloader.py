@@ -201,9 +201,8 @@ class DataLoadPreprocess(Dataset):
                     depth_gt = np.expand_dims(depth_gt, axis=2)
                     depth_gt = depth_gt / 1000.0
 
-                sample = {'image': image, 'depth': depth_gt, 'mask': mask,
-                          'embedding': embedding, 'bbox': bbox, 'valid': has_valid_depth
-                          }
+                sample = {'image': image, 'depth': depth_gt, 'embedding': embedding,
+                          'bbox': bbox, 'valid': has_valid_depth}
             else:
                 sample = {'image': image, 'embedding': embedding, 'bbox': bbox}
 
