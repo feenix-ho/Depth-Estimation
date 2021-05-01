@@ -51,3 +51,4 @@ class Arg_train:
         self.min_depth_eval = float(config['min_depth_eval'])  # 1e-3
         self.max_depth_eval = float(config['max_depth_eval'])  # 80
         self.eval_freq = int(config['eval_freq'])  # 500
+        self.eigen_crop = True
