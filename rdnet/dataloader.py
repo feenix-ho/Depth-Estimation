@@ -293,7 +293,7 @@ class ToTensor(object):
         if self.mode == 'test':
             return {'image': image, 'embedding': embedding, 'bbox': bbox}
 
-        mask = torch.BoolTensor(sample['mask'])
+        mask = self.to_tensor(sample['mask']).to(torch.bool)
         depth = self.to_tensor(sample['depth'])
 
         if self.mode != 'train':
