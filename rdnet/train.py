@@ -106,6 +106,7 @@ def normalize_result(value, vmin=None, vmax=None):
 
 def online_eval(model, dataloader_eval, gpu, ngpus):
     eval_measures = torch.zeros(10).to(DEVICE)
+    model.eval()
     for _, eval_sample_batched in enumerate(tqdm(dataloader_eval.data)):
         with torch.no_grad():
             image = eval_sample_batched['image'].to(DEVICE)
@@ -118,7 +119,7 @@ def online_eval(model, dataloader_eval, gpu, ngpus):
                 # print('Invalid depth. continue.')
                 continue
 
-            pred_depth = model(image, embedding, location)
+            pred_depth = model(image, embedding, location).detach()
 
             pred_depth = pred_depth.cpu().numpy().squeeze()
             gt_depth = gt_depth.cpu().numpy().squeeze()
