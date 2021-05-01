@@ -39,7 +39,7 @@ from tqdm import tqdm
 from model import RDNet
 from eval import compute_errors, compute_loss
 from dataloader import *
-from arg_handler import Arg_train
+from args import Arg_train
 
 
 DEVICE = torch.device('cuda')

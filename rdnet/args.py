@@ -34,9 +34,6 @@ class Arg_train:
         self.data_path_eval = ''
         self.mode = 'train'
         self.checkpoint_path = config['checkpoint_path']
-        self.fix_first_conv_blocks = True
-        self.fix_first_conv_block = True
-        self.bn_no_track_stats = True
         self.landmarks = int(config['landmarks'])  # 512
         self.retrain = True
         self.end_learning_rate = -1
@@ -48,6 +45,9 @@ class Arg_train:
         self.do_online_eval = True
         self.transformer = Nystromer
         self.multiprocessing_distributed = False
-        self.log_freq = 100
-        self.save_freq = 500
+        self.log_freq = int(config['log_freq'])  # 100
+        self.save_freq = int(config['save_freq'])  # 500
         self.eval_summary_directory = ''
+        self.min_depth_eval = float(config['min_depth_eval'])  # 1e-3
+        self.max_depth_eval = float(config['max_depth_eval'])  # 80
+        self.eval_freq = int(config['eval_freq'])  # 500
