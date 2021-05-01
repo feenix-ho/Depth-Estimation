@@ -297,7 +297,7 @@ class ToTensor(object):
         mask = torch.BoolTensor(sample['mask'])
         depth = self.to_tensor(sample['depth'])
 
-        if mode != 'train':
+        if self.mode != 'train':
             valid_depth = sample['valid']
             return {'image': image, 'mask': mask, 'embedding': embedding,
                     'bbox': bbox, 'depth': depth, 'valid': valid_depth}
