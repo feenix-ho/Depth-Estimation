@@ -290,12 +290,12 @@ class ToTensor(object):
         image = self.to_tensor(sample['image'])
         image = self.normalize(image)
         embedding = torch.Tensor(sample['embedding'])
-        bbox = torch.Tensor(sample['bbox'], dtype=torch.long)
+        bbox = torch.LongTensor(sample['bbox'])
 
         if self.mode == 'test':
             return {'image': image, 'embedding': embedding, 'bbox': bbox}
 
-        mask = sample['mask']
+        mask = torch.BoolTensor(sample['mask'])
         depth = self.to_tensor(sample['depth'])
         valid_depth = sample['valid']
         return {'image': image, 'mask': mask, 'embedding': embedding,
