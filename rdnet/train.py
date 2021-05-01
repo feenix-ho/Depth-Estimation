@@ -297,17 +297,15 @@ def main_worker(gpu, ngpus_per_node, args):
             depth_gt = sample_batched['depth'].to(DEVICE)
             embedding = sample_batched['embedding'].to(DEVICE)
             location = sample_batched['bbox'].to(DEVICE)
-
             mask = sample_batched['mask'].to(DEVICE)
-            try:
-                depth_est = model(
-                image, embedding, location)
+
+            depth_est = model(
+            image, embedding, location)
 
             # computeloss
-                loss = compute_loss(depth_est, depth_gt, mask)
-            except:
-                print("Error here")
+            loss = compute_loss(depth_est, depth_gt, mask)
             loss.backward()
+            
             for param_group in optimizer.param_groups:
                 current_lr = (args.learning_rate - end_learning_rate) * \
                     (1 - global_step / num_total_steps) ** 0.9 + end_learning_rate

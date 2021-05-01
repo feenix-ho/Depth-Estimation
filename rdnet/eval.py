@@ -46,10 +46,6 @@ def compute_ssi(preds, targets, masks, trimmed=1.):
     trimmed_errors = torch.where((invalids <= idxs) & (
         idxs < cutoff), sorted_errors, sorted_errors - sorted_errors)
 
-    try:
-        temp = (trimmed_errors / valids)
-    except:
-        print("Error here")
     return (trimmed_errors / valids).sum(dim=2)
 
 
@@ -58,6 +54,7 @@ def compute_reg(preds, targets, masks, num_scale=4):
         grads = filters.spatial_gradient(preds - targets)
         abs_grads = torch.abs(grads[:, :, 0]) + torch.abs(grads[:, :, 1])
         sum_grads = torch.sum(abs_grads * masks, (2, 3))
+        assert 0 not in masks.sum((2, 3))
         return sum_grads / masks.sum((2, 3))
 
     total = 0
