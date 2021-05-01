@@ -141,8 +141,11 @@ class RDNet(nn.Module):
 
     def forward(self, images, embs, locations):
         patches = self.to_patch(images)
+        assert patches.sum() > 1e-3
         patches = self.knowledge(patches, embs, locations)
+        assert patches.sum() > 1e-3
         results = self.dense(patches)
+        assert results.sum() > 1e-3
         results = self.head(results)
         try:
             assert results.sum() > 1e-3
