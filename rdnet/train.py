@@ -105,16 +105,16 @@ def normalize_result(value, vmin=None, vmax=None):
 
 
 def online_eval(model, dataloader_eval, gpu, ngpus):
-    eval_measures = torch.zeros(10).cuda(device=gpu)
+    eval_measures = torch.zeros(10).to(DEVICE)
     for _, eval_sample_batched in enumerate(tqdm(dataloader_eval.data)):
         with torch.no_grad():
             image = eval_sample_batched['image'].to(DEVICE)
             gt_depth = eval_sample_batched['depth'].to(DEVICE)
-            has_valid_depth = eval_sample_batched['has_valid_depth']
-
+            valid_depth = eval_sample_batched['valid']
             embedding = sample_batched['embedding'].to(DEVICE)
             location = sample_batched['bbox'].to(DEVICE)
-            if not has_valid_depth:
+
+            if not valid_depth:
                 # print('Invalid depth. continue.')
                 continue
 
@@ -302,10 +302,8 @@ def main_worker(gpu, ngpus_per_node, args):
             depth_est = model(
                 image, embedding, location)
 
-            mask &= depth_gt > 0.1
             # computeloss
-            loss = compute_loss(
-                depth_est, depth_gt, mask.to(torch.bool))
+            loss = compute_loss(depth_est, depth_gt, mask)
             loss.backward()
             for param_group in optimizer.param_groups:
                 current_lr = (args.learning_rate - end_learning_rate) * \

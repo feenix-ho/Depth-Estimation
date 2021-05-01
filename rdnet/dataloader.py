@@ -149,7 +149,7 @@ class DataLoadPreprocess(Dataset):
             bbox = np.asarray(bbox, dtype=np.float32)
             embedding = np.asarray(embedding, dtype=np.float32)
 
-            mask = np.zeros(depth_gt.shape)
+            mask = np.zeros(depth_gt.shape, dtype=torch.bool)
             mask[45:471, 41:601] = 1
             depth_gt = depth_gt / 1000.0
             mask &= depth_gt > .1
@@ -205,7 +205,7 @@ class DataLoadPreprocess(Dataset):
                     depth_gt = np.asarray(depth_gt, dtype=np.float32)
                     depth_gt = np.expand_dims(depth_gt, axis=2)
 
-                    mask = np.zeros(depth_gt.shape)
+                    mask = np.zeros(depth_gt.shape, dtype=torch.bool)
                     mask[45:471, 41:601] = 1
                     depth_gt = depth_gt / 1000.0
                     mask &= depth_gt > .1
@@ -215,8 +215,8 @@ class DataLoadPreprocess(Dataset):
                     depth_gt = np.expand_dims(depth_gt, axis=2)
                     depth_gt = depth_gt / 1000.0
 
-                sample = {'image': image, 'depth': depth_gt,
-                      'embedding': embedding, 'bbox': bbox, 'mask': mask
+                sample = {'image': image, 'depth': depth_gt, 'mask': mask,
+                      'embedding': embedding, 'bbox': bbox, 'valid': has_valid_depth
                       }
             else:
                 sample = {'image': image, 'embedding': embedding, 'bbox': bbox}
@@ -297,7 +297,10 @@ class ToTensor(object):
 
         mask = sample['mask']
         depth = self.to_tensor(sample['depth'])
-        return {'image': image, 'mask': mask, 'embedding': embedding, 'bbox': bbox, 'depth': depth}
+        valid_depth = sample['valid']
+        return {'image': image, 'mask': mask, 'embedding': embedding,
+                'bbox': bbox,'depth': depth, 'valid': valid_depth
+                }
 
     def to_tensor(self, pic):
         if not (_is_pil_image(pic) or _is_numpy_image(pic)):
