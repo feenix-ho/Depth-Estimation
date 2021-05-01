@@ -72,6 +72,7 @@ def compute_reg(preds, targets, masks, num_scale=4):
 def compute_loss(preds, targets, masks, trimmed=1., num_scale=4, alpha=.5, **kwargs):
     def align(imgs, masks):
         patches = rearrange(imgs, 'b c h w -> b c (h w)')
+        patched_masks = rearrange(masks, 'b c h w -> b c (h w)')
         meds = []
 
         for img, mask in zip(imgs, masks):
@@ -79,13 +80,16 @@ def compute_loss(preds, targets, masks, trimmed=1., num_scale=4, alpha=.5, **kwa
             meds.append(med.unsqueeze(1))
 
         t = repeat(torch.cat(meds), 'b c -> b c d', d=1)
-        s = torch.abs(patches - t).mean(2, True)
-
+        masked_abs = torch.abs(patches - t) * patched_masks
+        assert torch.isnan(masked_abs).sum() == 0
+        
+        s = masked_abs.sum(2, True) / patched_masks.sum(2, True)
         assert 0 not in s
-        temp = (imgs - t.unsqueeze(3)) / s.unsqueeze(3)
+        assert torch.isnan(s).sum() == 0
+        temp = (imgs - t.unsqueeze(3)) / s
         assert torch.isnan(temp).sum() == 0
 
-        return (imgs - t.unsqueeze(3)) / s.unsqueeze(3)
+        return (imgs - t.unsqueeze(3)) / s
 
     aligned_preds = align(preds, masks)
     aligned_targets = align(targets, masks)
