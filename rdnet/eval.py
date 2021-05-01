@@ -6,9 +6,6 @@ import numpy as np
 from einops import rearrange, repeat
 from kornia import filters
 
-EPS = 1e-3
-
-
 def compute_errors(gt, pred):
     thresh = np.maximum((gt / pred), (pred / gt))
     d1 = (thresh < 1.25).mean()
@@ -33,14 +30,14 @@ def compute_errors(gt, pred):
     return silog, log10, abs_rel, sq_rel, rmse, rmse_log, d1, d2, d3
 
 
-def compute_ssi(preds, targets, masks, trimmed=1.):
+def compute_ssi(preds, targets, masks, trimmed=1., eps=1e-4):
     masks = rearrange(masks, 'b c h w -> b c (h w)')
     errors = rearrange(torch.abs(preds - targets), 'b c h w -> b c (h w)')
     b, _, n = masks.shape
     valids = masks.sum(2, True)
     invalids = (~masks).sum(2, True)
 
-    errors -= (errors + EPS) * (~masks)
+    errors -= (errors + eps) * (~masks)
     sorted_errors, _ = torch.sort(errors, dim=2)
     assert torch.isnan(sorted_errors).sum() == 0
     idxs = repeat(torch.arange(end=n, device=valids.device),
@@ -71,7 +68,7 @@ def compute_reg(preds, targets, masks, num_scale=4):
     return total
 
 
-def compute_loss(preds, targets, masks, trimmed=1., num_scale=4, alpha=.5, **kwargs):
+def compute_loss(preds, targets, masks, trimmed=1., num_scale=4, alpha=.5, eps=1e-4, **kwargs):
     def align(imgs, masks):
         patches = rearrange(imgs, 'b c h w -> b c (h w)')
         patched_masks = rearrange(masks, 'b c h w -> b c (h w)')
@@ -85,12 +82,12 @@ def compute_loss(preds, targets, masks, trimmed=1., num_scale=4, alpha=.5, **kwa
         masked_abs = torch.abs(patches - t) * patched_masks
         assert torch.isnan(masked_abs).sum() == 0
 
-        s = masked_abs.sum(2, True) / patched_masks.sum(2, True) + EPS
+        s = masked_abs.sum(2, True) / patched_masks.sum(2, True) + eps
         try:
             assert 0 not in s
         except:
-            print("Masked absolute: ", masked_abs[s[:, :, 0] < EPS])
-            print("Patches: ", patches[s[:, :, 0] < EPS])
+            print("Masked absolute: ", masked_abs[s[:, :, 0] < eps])
+            print("Patches: ", patches[s[:, :, 0] < eps])
             assert False
         assert torch.isnan(s).sum() == 0
         temp = (imgs - t.unsqueeze(3)) / s.unsqueeze(3)
@@ -98,7 +95,7 @@ def compute_loss(preds, targets, masks, trimmed=1., num_scale=4, alpha=.5, **kwa
 
         return (imgs - t.unsqueeze(3)) / s.unsqueeze(3)
 
-    assert (preds * preds).sum() > EPS
+    assert (preds * preds).sum() > eps
     aligned_preds = align(preds, masks)
     aligned_targets = align(targets, masks)
     assert torch.isnan(aligned_preds).sum() == 0

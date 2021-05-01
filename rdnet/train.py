@@ -186,15 +186,7 @@ def main_worker(gpu, ngpus_per_node, args):
                   emb_size=args.emb_size,
                   use_readout=args.use_readout,
                   hooks=args.hooks,
-                  batch_size=args.batch_size,
-                  num_epochs=args.num_epochs,
-                  learning_rate=args.learning_rate,
-                  weight_decay=args.weight_decay,
-                  adam_eps=args.adam_eps,
-                  num_threads=args.num_threads,
                   landmarks=args.landmarks,
-                  end_learning_rate=args.end_learning_rate,
-                  variance_focus=args.variance_focus,
                   transformer=args.transformer)
     model.train()
     num_params = sum([np.prod(p.size()) for p in model.parameters()])
@@ -210,7 +202,7 @@ def main_worker(gpu, ngpus_per_node, args):
     print("Model Initialized")
 
     global_step = 0
-    best_eval_measures_lower_better = torch.zeros(6).cpu() + 1e3
+    best_eval_measures_lower_better = torch.zeros(6).cpu() + 1/args.eps
     best_eval_measures_higher_better = torch.zeros(3).cpu()
     best_eval_steps = np.zeros(9, dtype=np.int32)
 
@@ -299,7 +291,7 @@ def main_worker(gpu, ngpus_per_node, args):
                 image, embedding, location)
 
             # computeloss
-            loss = compute_loss(depth_est, depth_gt, mask,
+            loss = compute_loss(depth_est, depth_gt, mask, eps=args.eps,
                                 trimmed=args.trimmed, num_scale=args.num_scale, alpha=args.alpha)
             assert 0 not in loss
             loss.backward()

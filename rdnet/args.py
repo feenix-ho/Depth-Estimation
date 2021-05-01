@@ -36,6 +36,7 @@ class Arg_train:
         self.checkpoint_path = config['checkpoint_path']
         self.landmarks = int(config['landmarks'])  # 512
         self.retrain = True
+        self.eps = float(config['eps'])
         self.trimmed = float(config['trimmed'])
         self.num_scale = float(config['num_scale'])
         self.alpha = float(config['alpha'])
