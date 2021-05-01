@@ -143,29 +143,21 @@ class DataLoadPreprocess(Dataset):
             embedding = f['embed']
             f.close()
 
-            cropped_image = []
-            for i in range(640):
-                x = []
-                for j in range(480):
-                    if i < 43 or i > 608 or j < 45 or j > 472:
-                        x.append(0)
-                    else:
-                        x.append(1)
-                cropped_image.append(x)
-
             image = np.asarray(image, dtype=np.float32) / 255.0
             depth_gt = np.asarray(depth_gt, dtype=np.float32)
             depth_gt = np.expand_dims(depth_gt, axis=2)
-            cropped_image = np.asarray(cropped_image, dtype=np.float32)
             bbox = np.asarray(bbox, dtype=np.float32)
             embedding = np.asarray(embedding, dtype=np.float32)
+
+            mask = np.zeros(depth_gt.shape)
+            mask[45:471, 41:601] = 1
 
             depth_gt = depth_gt / 1000.0
 
             image, depth_gt = self.train_preprocess(image, depth_gt)
             sample = {'image': image, 'depth': depth_gt,
-                      'focal': focal, 'embedding': embedding,
-                      'bbox': bbox, 'cropped_image': cropped_image}
+                      'embedding': embedding, 'bbox': bbox, 'mask': mask
+                      }
 
         else:
             # image
@@ -289,7 +281,7 @@ class ToTensor(object):
     def __call__(self, sample):
         image = self.to_tensor(sample['image'])
         image = self.normalize(image)
-        mask = sample['embedding']
+        mask = sample['mask']
         embedding = torch.Tensor(sample['embedding'])
         bbox = torch.Tensor(sample['bbox'], dtype=torch.long)
 
@@ -297,12 +289,7 @@ class ToTensor(object):
             return {'image': image, 'mask': mask, 'embedding': embedding, 'bbox': bbox}
 
         depth = self.to_tensor(sample['depth'])
-        if self.mode == 'train':
-            return {'image': image, 'depth': depth, 'focal': focal, 'embedding': embedding,
-                    'bbox': bbox, 'cropped_image': cropped_image}
-        else:
-            has_valid_depth = sample['has_valid_depth']
-            return {'image': image, 'depth': depth, 'focal': focal, 'has_valid_depth': has_valid_depth}
+        return {'image': image, 'mask': mask, 'embedding': embedding, 'bbox': bbox, 'depth': depth}
 
     def to_tensor(self, pic):
         if not (_is_pil_image(pic) or _is_numpy_image(pic)):
