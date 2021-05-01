@@ -105,7 +105,8 @@ def normalize_result(value, vmin=None, vmax=None):
 
 
 def online_eval(model, dataloader_eval, gpu, ngpus):
-    eval_measures = torch.zeros(10).to(DEVICE)
+    num_metrics = 11
+    eval_measures = torch.zeros(num_metrics).to(DEVICE)
     for _, eval_sample_batched in enumerate(tqdm(dataloader_eval.data)):
         with torch.no_grad():
             image = eval_sample_batched['image'].to(DEVICE)
@@ -113,15 +114,19 @@ def online_eval(model, dataloader_eval, gpu, ngpus):
             valid_depth = eval_sample_batched['valid']
             embedding = eval_sample_batched['embedding'].to(DEVICE)
             location = eval_sample_batched['bbox'].to(DEVICE)
+            mask = eval_sample_batched['mask'].to(DEVICE)
 
             if not valid_depth:
                 # print('Invalid depth. continue.')
                 continue
 
             pred_depth = model(image, embedding, location).detach()
+            loss = compute_loss(pred_depth, gt_depth, mask, eps=args.eps,
+                                trimmed=args.trimmed, num_scale=args.num_scale, alpha=args.alpha)
 
             pred_depth = pred_depth.cpu().numpy().squeeze()
             gt_depth = gt_depth.cpu().numpy().squeeze()
+            loss = loss.cpu().numpy().squeeze()
 
         pred_depth[pred_depth < args.min_depth_eval] = args.min_depth_eval
         pred_depth[pred_depth > args.max_depth_eval] = args.max_depth_eval
@@ -144,18 +149,17 @@ def online_eval(model, dataloader_eval, gpu, ngpus):
 
             valid_mask = np.logical_and(valid_mask, eval_mask)
 
-        measures = compute_errors(gt_depth[valid_mask], pred_depth[valid_mask])
+        measures = compute_errors(gt_depth[valid_mask], pred_depth[valid_mask]), loss
 
-        eval_measures[:9] += torch.tensor(measures).to(DEVICE)
-        eval_measures[9] += 1
+        eval_measures[:num_metrics - 1] += torch.tensor(measures).to(DEVICE)
+        eval_measures[num_metrics - 1] += 1
 
     eval_measures_cpu = eval_measures.cpu()
-    cnt = eval_measures_cpu[9].item()
+    cnt = eval_measures_cpu[num_metrics - 1].item()
     eval_measures_cpu /= cnt
     print('Computing errors for {} eval samples'.format(int(cnt)))
-    print("{:>7}, {:>7}, {:>7}, {:>7}, {:>7}, {:>7}, {:>7}, {:>7}, {:>7}".format('silog', 'abs_rel', 'log10', 'rms',
-                                                                                 'sq_rel', 'log_rms', 'd1', 'd2',
-                                                                                 'd3'))
+    print("{:>7}, {:>7}, {:>7}, {:>7}, {:>7}, {:>7}, {:>7}, {:>7}, {:>7}, {:>7}".format(
+            'loss', 'silog', 'abs_rel', 'log10', 'rms', 'sq_rel', 'log_rms', 'd1', 'd2', 'd3'))
     for i in range(8):
         print('{:7.3f}, '.format(eval_measures_cpu[i]), end='')
     print('{:7.3f}'.format(eval_measures_cpu[8]))
