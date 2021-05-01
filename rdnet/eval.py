@@ -44,7 +44,7 @@ def compute_ssi(preds, targets, masks, trimmed=1.):
                   'n -> b c n', b=b, c=1)
     cutoff = (trimmed * valids) + invalids
     trimmed_errors = torch.where((invalids <= idxs) & (
-        idxs < cutoff), sorted_errors, 0)
+        idxs < cutoff), sorted_errors, sorted_errors - sorted_errors)
 
     return trimmed_errors.sum(dim=2) / valids
 
