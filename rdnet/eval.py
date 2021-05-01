@@ -40,12 +40,11 @@ def compute_ssi(preds, targets, masks, trimmed=1.):
 
     errors -= (errors + EPS) * (~masks)
     sorted_errors, _ = torch.sort(errors, dim=2)
-    zeros = torch.zeros((b, n), device=sorted_errors.device)
     idxs = repeat(torch.arange(end=n, device=valids.device),
                   'n -> b c n', b=b, c=1)
     cutoff = (trimmed * valids) + invalids
     trimmed_errors = torch.where((invalids <= idxs) & (
-        idxs < cutoff), sorted_errors, zeros)
+        idxs < cutoff), sorted_errors, 0)
 
     return trimmed_errors.sum(dim=2) / valids
 
@@ -86,8 +85,8 @@ def compute_loss(preds, targets, masks, trimmed=1., num_scale=4, alpha=.5, **kwa
     aligned_preds = align(preds, masks)
     aligned_targets = align(targets, masks)
 
-    loss = compute_ssi(preds, targets, masks, trimmed)
+    loss = compute_ssi(aligned_preds, aligned_targets, masks, trimmed)
     if alpha > 0.:
-        loss += alpha * compute_reg(preds=preds, targets=targets,
-                                    masks=masks, num_scale=num_scale, **kwargs)
+        loss += alpha * compute_reg(aligned_preds, aligned_targets,
+                                    masks, num_scale)
     return loss.mean(dim=0)
