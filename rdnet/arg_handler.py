@@ -43,8 +43,9 @@ class Arg_train:
         self.model_name = 'RDNet'
         self.gpu = 0
         self.log_directory = config['log_directory']
-        self.do_online_eval = False
+        self.do_online_eval = True
         self.transformer = Nystromer
         self.multiprocessing_distributed = False
         self.log_freq = 100
         self.save_freq = 500
+        self.eval_summary_directory = ''

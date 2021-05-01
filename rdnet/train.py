@@ -104,41 +104,6 @@ def normalize_result(value, vmin=None, vmax=None):
     return np.expand_dims(value, 0)
 
 
-def set_misc(model):
-    if args.bn_no_track_stats:
-        print("Disabling tracking running stats in batch norm layers")
-        model.apply(bn_init_as_tf)
-
-    if args.fix_first_conv_blocks:
-        if 'resne' in args.encoder:
-            fixing_layers = ['base_model.conv1',
-                             'base_model.layer1.0', 'base_model.layer1.1', '.bn']
-        else:
-            fixing_layers = ['conv0', 'denseblock1.denselayer1',
-                             'denseblock1.denselayer2', 'norm']
-        print("Fixing first two conv blocks")
-    elif args.fix_first_conv_block:
-        if 'resne' in args.encoder:
-            fixing_layers = ['base_model.conv1', 'base_model.layer1.0', '.bn']
-        else:
-            fixing_layers = ['conv0', 'denseblock1.denselayer1', 'norm']
-        print("Fixing first conv block")
-    else:
-        if 'resne' in args.encoder:
-            fixing_layers = ['base_model.conv1', '.bn']
-        else:
-            fixing_layers = ['conv0', 'norm']
-        print("Fixing first conv layer")
-
-    for name, child in model.named_children():
-        if not 'encoder' in name:
-            continue
-        for name2, parameters in child.named_parameters():
-            # print(name, name2)
-            if any(x in name2 for x in fixing_layers):
-                parameters.requires_grad = False
-
-
 def online_eval(model, dataloader_eval, gpu, ngpus):
     eval_measures = torch.zeros(10).cuda(device=gpu)
     for _, eval_sample_batched in enumerate(tqdm(dataloader_eval.data)):
@@ -299,7 +264,7 @@ def main_worker(gpu, ngpus_per_node, args):
     cudnn.benchmark = True
 
     dataloader = BtsDataLoader(args, 'train')
-    dataloader_eval = None
+    dataloader_eval = BtsDataLoader(args, 'online_eval')
 
     # Logging
     if not args.multiprocessing_distributed or (args.multiprocessing_distributed and args.rank % ngpus_per_node == 0):
@@ -336,11 +301,13 @@ def main_worker(gpu, ngpus_per_node, args):
         for step, sample_batched in enumerate(dataloader.data):
             optimizer.zero_grad()
             before_op_time = time.time()
+
             image = sample_batched['image'].to(DEVICE)
             depth_gt = sample_batched['depth'].to(DEVICE)
             embedding = sample_batched['embedding'].to(DEVICE)
             location = sample_batched['bbox'].to(DEVICE)
             cropped_image = sample_batched['cropped_image'].to(DEVICE)
+
             depth_est = model(
                 image, embedding, location)
 
@@ -373,8 +340,7 @@ def main_worker(gpu, ngpus_per_node, args):
                 time_sofar = (time.time() - start_time) / 3600
                 training_time_left = (
                     num_total_steps / global_step - 1.0) * time_sofar
-                if not args.multiprocessing_distributed or (args.multiprocessing_distributed and args.rank % ngpus_per_node == 0):
-                    print("{}".format(args.model_name))
+
                 print_string = 'GPU: {} | examples/s: {:4.2f} | loss: {:.5f} | var sum: {:.3f} avg: {:.3f} | time elapsed: {:.2f}h | time left: {:.2f}h'
                 print(print_string.format(args.gpu, examples_per_sec, loss[0], var_sum.item(
                 ), var_sum.item()/var_cnt, time_sofar, training_time_left))
@@ -404,10 +370,9 @@ def main_worker(gpu, ngpus_per_node, args):
                            args.model_name + '/model-{}'.format(global_step))
 
             if args.do_online_eval and global_step and global_step % args.eval_freq == 0 and not model_just_loaded:
-                time.sleep(0.1)
-                model.eval()
                 eval_measures = online_eval(
                     model, dataloader_eval, gpu, ngpus_per_node)
+
                 if eval_measures is not None:
                     for i in range(9):
                         eval_summary_writer.add_scalar(
@@ -448,9 +413,7 @@ def main_worker(gpu, ngpus_per_node, args):
                             torch.save(checkpoint, args.log_directory +
                                        '/' + args.model_name + model_save_name)
                     eval_summary_writer.flush()
-                model.train()
                 block_print()
-                set_misc(model)
                 enable_print()
 
             model_just_loaded = False

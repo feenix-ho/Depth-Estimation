@@ -90,6 +90,8 @@ class DataLoadPreprocess(Dataset):
         self.args = args
         if args.data_path[-1] != '/':
             args.data_path += '/'
+        if mode == 'online_eval':
+            mode = 'test'
 
         # load file names in 'custom_data_info.json'
         open_file = open(args.data_path + 'data.json')
@@ -166,23 +168,31 @@ class DataLoadPreprocess(Dataset):
                       'bbox': bbox, 'cropped_image': cropped_image}
 
         else:
-            if self.mode == 'online_eval':
-                data_path = self.args.data_path_eval
-            else:
-                data_path = self.args.data_path
-
+            # image
             image_path = self.images_path + sample_path
-            image = np.asarray(Image.open(image_path),
-                               dtype=np.float32) / 255.0
+            image = Image.open(image_path).resize(size, Image.BICUBIC)
+            image = np.asarray(image, dtype=np.float32) / 255.0
+
+            # bbox & embed
+            bbox_embed_path = self.bbox_embed_path + \
+                str(idx_bbox_embed) + '.npz'
+            f = np.load(bbox_embed_path)
+            bbox = f['bbox']
+            bbox = np.apply_along_axis(bbox_resize, 1, bbox)
+            embedding = f['embed']
+            f.close()
 
             if self.mode == 'online_eval':
-                gt_path = self.args.gt_path_eval
-                # depth_path = os.path.join(
-                # gt_path, "./" + sample_path.split()[1])
+                gt_path = self.depths_path + str(x) + '.npz'
                 has_valid_depth = False
                 try:
-                    #depth_gt = Image.open(depth_path)
-                    depth_gt = self.depth[x]
+                    f = np.load(depth_path)
+                    depth_gt = np.load(depth_path)['depth'].T
+                    f.close()
+                    img_depth = depth_gt * 1000.0
+                    img_depth_uint16 = img_depth.astype(np.uint16)
+                    depth_gt = Image.fromarray(
+                        img_depth_uint16).resize(size, Image.NEAREST)
                     has_valid_depth = True
                 except IOError:
                     depth_gt = False
@@ -206,9 +216,11 @@ class DataLoadPreprocess(Dataset):
             '''
             if self.mode == 'online_eval':
                 sample = {'image': image, 'depth': depth_gt,
+                          'embedding': embedding, 'bbox': bbox,
                           'focal': focal, 'has_valid_depth': has_valid_depth}
             else:
-                sample = {'image': image, 'focal': focal}
+                sample = {'image': image, 'focal': focal,
+                          'embedding': embedding, 'bbox': bbox, }
 
         if self.transform:
             sample = self.transform(sample)
