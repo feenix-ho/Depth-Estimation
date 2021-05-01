@@ -299,12 +299,11 @@ def main_worker(gpu, ngpus_per_node, args):
             location = sample_batched['bbox'].to(DEVICE)
 
             mask = sample_batched['mask'].to(DEVICE)
-
-            depth_est = model(
+            try:
+                depth_est = model(
                 image, embedding, location)
 
             # computeloss
-            try:
                 loss = compute_loss(depth_est, depth_gt, mask)
             except:
                 print("Error here")
