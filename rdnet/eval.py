@@ -6,6 +6,7 @@ from kornia import filters
 
 EPS = 1e-3
 
+
 def compute_errors(gt, pred):
     thresh = np.maximum((gt / pred), (pred / gt))
     d1 = (thresh < 1.25).mean()
@@ -40,9 +41,11 @@ def compute_ssi(preds, targets, masks, trimmed=1.):
     errors -= (errors + EPS) * (~masks)
     sorted_errors, _ = torch.sort(errors, dim=2)
     zeros = torch.zeros((b, n), device=sorted_errors.device)
-    idxs = repeat(torch.arange(end=n, device=valids.device), 'n -> b c n', b=b, c=1)
+    idxs = repeat(torch.arange(end=n, device=valids.device),
+                  'n -> b c n', b=b, c=1)
     cutoff = (trimmed * valids) + invalids
-    trimmed_errors = torch.where((invalids <= idxs) & (idxs < cutoff), sorted_errors, zeros)
+    trimmed_errors = torch.where((invalids <= idxs) & (
+        idxs < cutoff), sorted_errors, zeros)
 
     return trimmed_errors.sum(dim=2) / valids
 
@@ -74,7 +77,7 @@ def compute_loss(preds, targets, masks, trimmed=1., num_scale=4, alpha=.5, **kwa
             med = torch.masked_select(img, mask).median()
             meds.append(med.unsqueeze(0))
 
-        t = repeat(torch.cat(meds), 'b -> b c c', c=1)
+        t = repeat(torch.cat(meds), 'b -> b c d r', c=1, d=1)
         s = torch.abs(patches - t).mean(dim=2)
 
         return (imgs - t) / s
