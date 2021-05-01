@@ -105,8 +105,8 @@ def normalize_result(value, vmin=None, vmax=None):
 
 
 def online_eval(model, dataloader_eval, gpu, ngpus):
-    num_metrics = 11
-    eval_measures = torch.zeros(num_metrics).to(DEVICE)
+    num_metrics = 10
+    eval_measures = torch.zeros(num_metrics + 1).to(DEVICE)
     for _, eval_sample_batched in enumerate(tqdm(dataloader_eval.data)):
         with torch.no_grad():
             image = eval_sample_batched['image'].to(DEVICE)
@@ -149,23 +149,23 @@ def online_eval(model, dataloader_eval, gpu, ngpus):
 
             valid_mask = np.logical_and(valid_mask, eval_mask)
 
-        measures = compute_errors(gt_depth[valid_mask], pred_depth[valid_mask]), loss
+        measures = loss, compute_errors(gt_depth[valid_mask], pred_depth[valid_mask])
 
-        eval_measures[:num_metrics - 1] += torch.tensor(measures).to(DEVICE)
-        eval_measures[num_metrics - 1] += 1
+        eval_measures[:num_metrics] += torch.tensor(measures).to(DEVICE)
+        eval_measures[num_metrics] += 1
 
-    eval_measures_cpu = eval_measures.cpu()
-    cnt = eval_measures_cpu[num_metrics - 1].item()
-    eval_measures_cpu /= cnt
-    print('Computing errors for {} eval samples'.format(int(cnt)))
+    eval_measures.to('cpu')
+    cnt = int(eval_measures[-1].item())
+    eval_measures /= cnt
+    print('Computing errors for {} eval samples'.format(cnt))
     print("{:>7}, {:>7}, {:>7}, {:>7}, {:>7}, {:>7}, {:>7}, {:>7}, {:>7}, {:>7}".format(
             'loss', 'silog', 'abs_rel', 'log10', 'rms', 'sq_rel', 'log_rms', 'd1', 'd2', 'd3'))
-    for i in range(8):
-        print('{:7.3f}, '.format(eval_measures_cpu[i]), end='')
-    print('{:7.3f}'.format(eval_measures_cpu[8]))
-    return eval_measures_cpu
-
-    return None
+    
+    for i in range(num_metrics - 1):
+        print('{:7.3f}, '.format(eval_measures[i]), end='')
+    print('{:7.3f}'.format(eval_measures[-2]))
+    
+    return eval_measures
 
 
 def main_worker(gpu, ngpus_per_node, args):
