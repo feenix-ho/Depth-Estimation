@@ -287,20 +287,17 @@ class ToTensor(object):
             mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
 
     def __call__(self, sample):
-        image, focal = sample['image'], sample['focal']
-        embedding, bbox = sample['embedding'], sample['bbox']
-        cropped_image = sample['embedding']
-        image = self.to_tensor(image)
+        image = self.to_tensor(sample['image'])
         image = self.normalize(image)
+        mask = sample['embedding']
+        embedding = torch.Tensor(sample['embedding'])
+        bbox = torch.Tensor(sample['bbox'], dtype=torch.long)
 
         if self.mode == 'test':
-            return {'image': image, 'focal': focal}
+            return {'image': image, 'mask': mask, 'embedding': embedding, 'bbox': bbox}
 
-        depth = sample['depth']
+        depth = self.to_tensor(sample['depth'])
         if self.mode == 'train':
-            depth = self.to_tensor(depth)
-            embedding = torch.Tensor(embedding)
-            bbox = torch.LongTensor(bbox)
             return {'image': image, 'depth': depth, 'focal': focal, 'embedding': embedding,
                     'bbox': bbox, 'cropped_image': cropped_image}
         else:

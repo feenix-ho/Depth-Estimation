@@ -46,11 +46,10 @@ def compute_ssi(preds, targets, masks, trimmed=1.):
     trimmed_errors = torch.where((invalids <= idxs) & (
         idxs < cutoff), sorted_errors, sorted_errors - sorted_errors)
 
-    assert 0 in valids
     if 0 in valids:
         print(invalids)
         print(valids)
-        assert False
+        assert True
     return (trimmed_errors / valids).sum(dim=2)
 
 
