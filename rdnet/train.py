@@ -131,20 +131,16 @@ def online_eval(model, dataloader_eval, gpu, ngpus):
         valid_mask = np.logical_and(
             gt_depth > args.min_depth_eval, gt_depth < args.max_depth_eval)
 
-        if args.garg_crop or args.eigen_crop:
+        if args.eigen_crop or args.garg_crop:
             gt_height, gt_width = gt_depth.shape
             eval_mask = np.zeros(valid_mask.shape)
-
+            '''
             if args.garg_crop:
                 eval_mask[int(0.40810811 * gt_height):int(0.99189189 * gt_height),
                           int(0.03594771 * gt_width):int(0.96405229 * gt_width)] = 1
-
             elif args.eigen_crop:
-                if args.dataset == 'kitti':
-                    eval_mask[int(0.3324324 * gt_height):int(0.91351351 * gt_height),
-                              int(0.0359477 * gt_width):int(0.96405229 * gt_width)] = 1
-                else:
-                    eval_mask[45:471, 41:601] = 1
+            '''
+            eval_mask[45:471, 41:601] = 1
 
             valid_mask = np.logical_and(valid_mask, eval_mask)
 
