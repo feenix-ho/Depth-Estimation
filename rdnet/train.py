@@ -141,13 +141,11 @@ def online_eval(model, dataloader_eval, gpu, ngpus):
                           int(0.03594771 * gt_width):int(0.96405229 * gt_width)] = 1
             elif args.eigen_crop:
             '''
-            eval_mask[45:471, 41:601] = 1
+            eval_mask[:, :, 45:471, 41:601] = 1
 
             valid_mask = np.logical_and(valid_mask, eval_mask)
 
-        print(gt_depth.shape, pred_depth.shape)
         measures = compute_errors(gt_depth[valid_mask], pred_depth[valid_mask])
-
         try:
             eval_measures[:num_metrics] += np.insert(measures, 0, loss, axis=0)
         except:

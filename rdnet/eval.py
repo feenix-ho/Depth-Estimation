@@ -9,6 +9,8 @@ from kornia import filters
 
 def compute_errors(gt, pred):
     dim = (2, 3)
+    print(gt.shape)
+    print(pred.shape)
     thresh = np.maximum((gt / pred), (pred / gt))
     d1 = (thresh < 1.25).mean(dim)
     d2 = (thresh < 1.25 ** 2).mean(dim)
