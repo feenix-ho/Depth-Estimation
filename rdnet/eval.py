@@ -8,7 +8,7 @@ from kornia import filters
 
 
 def compute_errors(gt, pred):
-    dims = (2, 3)
+    dim = (2, 3)
     thresh = np.maximum((gt / pred), (pred / gt))
     d1 = (thresh < 1.25).mean(dim)
     d2 = (thresh < 1.25 ** 2).mean(dim)
