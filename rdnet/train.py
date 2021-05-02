@@ -367,10 +367,9 @@ def main_worker(gpu, ngpus_per_node, args):
                             best_eval_measures_lower_better[i] = measure.item()
                             is_best = True
                         elif i >= low_num and measure > best_eval_measures_higher_better[i - low_num]:
-                            old_best = best_eval_measures_higher_better[i-6].item(
+                            old_best = best_eval_measures_higher_better[i - low_num].item(
                             )
-                            best_eval_measures_higher_better[i -
-                                                             6] = measure.item()
+                            best_eval_measures_higher_better[i - low_num] = measure.item()
                             is_best = True
                         if is_best:
                             old_best_step = best_eval_steps[i]
