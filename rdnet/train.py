@@ -28,6 +28,7 @@ import numpy as np
 import torch.backends.cudnn as cudnn
 import torch.distributed as dist
 import torch.multiprocessing as mp
+from torchvision import transforms
 
 from tensorboardX import SummaryWriter
 
