@@ -7,32 +7,37 @@ from einops import rearrange, repeat
 from kornia import filters
 
 
-def compute_errors(gt, pred):
-    dim = (2, 3)
-    print(gt.shape)
-    print(pred.shape)
-    thresh = np.maximum((gt / pred), (pred / gt))
-    d1 = (thresh < 1.25).mean(dim)
-    d2 = (thresh < 1.25 ** 2).mean(dim)
-    d3 = (thresh < 1.25 ** 3).mean(dim)
+def compute_errors(depths, preds, masks):
+    errors = 0
+    cnt = 0
 
-    rmse = (gt - pred) ** 2
-    rmse = np.sqrt(rmse.mean(dim))
+    for depth, est, mask in zip(depths, preds, masks):
+        gt = depth[mask]
+        pred = est[mask]
 
-    rmse_log = (np.log(gt) - np.log(pred)) ** 2
-    rmse_log = np.sqrt(rmse_log.mean(dim))
+        thresh = np.maximum((gt / pred), (pred / gt))
+        d1 = (thresh < 1.25).mean()
+        d2 = (thresh < 1.25 ** 2).mean()
+        d3 = (thresh < 1.25 ** 3).mean()
 
-    abs_rel = np.mean(np.abs(gt - pred) / gt, dim)
-    sq_rel = np.mean(((gt - pred) ** 2) / gt, dim)
+        rmse = (gt - pred) ** 2
+        rmse = np.sqrt(rmse.mean())
 
-    err = np.log(pred) - np.log(gt)
-    silog = np.sqrt(np.mean(err ** 2, dim) - np.mean(err, dim) ** 2) * 100
+        rmse_log = (np.log(gt) - np.log(pred)) ** 2
+        rmse_log = np.sqrt(rmse_log.mean())
 
-    err = np.abs(np.log10(pred) - np.log10(gt))
-    log10 = np.mean(err, dim)
+        abs_rel = np.mean(np.abs(gt - pred) / gt)
+        sq_rel = np.mean(((gt - pred) ** 2) / gt)
 
-    errors = np.asarray([silog, log10, abs_rel, sq_rel, rmse, rmse_log, d1, d2, d3])
-    return errors.mean(1)
+        err = np.log(pred) - np.log(gt)
+        silog = np.sqrt(np.mean(err ** 2) - np.mean(err) ** 2) * 100
+
+        err = np.abs(np.log10(pred) - np.log10(gt))
+        log10 = np.mean(err)
+
+        errors += np.asarray([silog, log10, abs_rel, sq_rel, rmse, rmse_log, d1, d2, d3])
+        cnt += 1
+    return errors / cnt
 
 
 def compute_ssi(preds, targets, masks, trimmed=1., eps=1e-4):
