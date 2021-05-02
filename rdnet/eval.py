@@ -118,3 +118,12 @@ def compute_loss(preds, targets, masks, trimmed=1., num_scale=4, alpha=.5, eps=1
                                     masks, num_scale)
     assert torch.isnan(loss).sum() == 0
     return loss.mean(dim=0)
+
+class silog_loss(nn.Module):
+    def __init__(self, variance_focus):
+        super(silog_loss, self).__init__()
+        self.variance_focus = variance_focus
+
+    def forward(self, depth_est, depth_gt, mask):
+        d = torch.log(depth_est[mask]) - torch.log(depth_gt[mask])
+        return torch.sqrt((d ** 2).mean() - self.variance_focus * (d.mean() ** 2)) * 10.0

@@ -38,7 +38,7 @@ import threading
 from tqdm import tqdm
 
 from model import RDNet
-from eval import compute_errors, compute_loss
+from eval import compute_errors, compute_loss, silog_loss
 from dataloader import Loader
 from args import Arg_train
 
@@ -244,6 +244,7 @@ def main_worker(gpu, ngpus_per_node, args):
 
     dataloader = Loader(args, 'train')
     dataloader_eval = Loader(args, 'online_eval')
+    silog_criterion = silog_loss(variance_focus=args.variance_focus)
 
     # Logging
     writer = SummaryWriter(args.log_directory + '/' +
@@ -288,8 +289,11 @@ def main_worker(gpu, ngpus_per_node, args):
             depth_est = model(image, embedding, location)
 
             # computeloss
-            loss = compute_loss(depth_est, depth_gt, mask, eps=args.eps,
-                                trimmed=args.trimmed, num_scale=args.num_scale, alpha=args.alpha)
+            # loss = compute_loss(depth_est, depth_gt, mask, eps=args.eps,
+            #                     trimmed=args.trimmed, num_scale=args.num_scale, alpha=args.alpha)
+
+            loss = silog_criterion(depth_est, depth_gt, mask)
+
             assert 0 not in loss
             loss.backward()
 

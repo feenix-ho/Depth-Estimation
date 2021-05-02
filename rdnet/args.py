@@ -44,6 +44,7 @@ class Arg_train:
         self.scale = float(config['scale'])
         self.shift = float(config['shift'])
         self.invert = True
+        self.variance_focus = float(config['focus'])
         self.model_name = config['model']
         self.gpu = 0
         self.log_directory = config['log_directory']
