@@ -133,7 +133,7 @@ def online_eval(model, dataloader_eval, gpu, ngpus):
             gt_depth > args.min_depth_eval, gt_depth < args.max_depth_eval)
 
         if args.eigen_crop or args.garg_crop:
-            gt_height, gt_width = gt_depth.shape
+            b, _, gt_height, gt_width = gt_depth.shape
             eval_mask = np.zeros(valid_mask.shape)
             '''
             if args.garg_crop:
