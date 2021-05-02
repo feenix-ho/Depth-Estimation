@@ -1,5 +1,6 @@
 import torch
 from torch import nn
+from torch.nn import functional as F
 
 import numpy as np
 
@@ -132,6 +133,9 @@ class silog_loss(nn.Module):
 
     def forward(self, depth_est, depth_gt, mask):
         try:
+            depth_est = F.softplus(depth_est)
+            depth_gt = F.softplus(depth_gt)
+            
             d = torch.log(depth_est[mask]) - torch.log(depth_gt[mask])
             return torch.sqrt((d ** 2).mean() - self.variance_focus * (d.mean() ** 2)) * 10.0
         except:
