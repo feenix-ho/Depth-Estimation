@@ -156,11 +156,11 @@ class RDNet(nn.Module):
         results = self.dense(patches)
         assert (results * results).sum() > 1e-6
         inv_depth = self.head(results)
-        try:
-            # assert (inv_depth ** 2).sum() > 1e-6
-        except:
-            print(inv_depth)
-            assert False
+        # try:
+        #     assert (inv_depth ** 2).sum() > 1e-6
+        # except:
+        #     print(inv_depth)
+        #     assert False
 
         if self.invert:
             try:
