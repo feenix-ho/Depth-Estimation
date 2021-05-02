@@ -38,7 +38,7 @@ from tqdm import tqdm
 
 from model import RDNet
 from eval import compute_errors, compute_loss
-from dataloader import *
+from dataloader import Loader
 from args import Arg_train
 
 
