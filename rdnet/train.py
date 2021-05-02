@@ -118,8 +118,9 @@ def online_eval(model, dataloader_eval, gpu, ngpus):
             mask = eval_sample_batched['mask'].to(DEVICE)
 
             pred_depth = model(image, embedding, location).detach()
-            loss = compute_loss(pred_depth, gt_depth, mask, eps=args.eps,
-                                trimmed=args.trimmed, num_scale=args.num_scale, alpha=args.alpha)
+            # loss = compute_loss(pred_depth, gt_depth, mask, eps=args.eps,
+            #                     trimmed=args.trimmed, num_scale=args.num_scale, alpha=args.alpha)
+            loss = silog_criterion(depth_est, depth_gt, mask)
 
             pred_depth = pred_depth.cpu().numpy()
             gt_depth = gt_depth.cpu().numpy()
