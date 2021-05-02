@@ -205,7 +205,7 @@ def main_worker(gpu, ngpus_per_node, args):
     global_step = 0
     best_eval_measures_lower_better = torch.zeros(low_num).cpu() + 1/args.eps
     best_eval_measures_higher_better = torch.zeros(num_metrics - low_num).cpu()
-    best_eval_steps = np.zeros(9, dtype=np.int32)
+    best_eval_steps = np.zeros(num_metrics, dtype=np.int32)
 
     # Training parameters
     optimizer = torch.optim.AdamW(params=model.parameters(), weight_decay=args.weight_decay,
