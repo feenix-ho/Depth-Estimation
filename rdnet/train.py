@@ -292,7 +292,7 @@ def main_worker(gpu, ngpus_per_node, args):
             # computeloss
             # loss = compute_loss(depth_est, depth_gt, mask, eps=args.eps,
             #                     trimmed=args.trimmed, num_scale=args.num_scale, alpha=args.alpha)
-
+            assert depth_est > 0
             loss = silog_criterion(depth_est, depth_gt, mask)
 
             assert 0 not in loss
