@@ -177,6 +177,6 @@ class RDNet(nn.Module):
         return F.interpolate(
             depth,
             size=images.shape[2:4],
-            mode="bicubic",
+            mode="bilinear",
             align_corners=False
         )
