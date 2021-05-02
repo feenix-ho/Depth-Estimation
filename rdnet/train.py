@@ -323,10 +323,10 @@ def main_worker(gpu, ngpus_per_node, args):
                     num_total_steps / global_step - 1.0) * time_sofar
 
                 print_string = 'GPU: {} | examples/s: {:4.2f} | loss: {:.5f} | var sum: {:.3f} avg: {:.3f} | time elapsed: {:.2f}h | time left: {:.2f}h'
-                print(print_string.format(args.gpu, examples_per_sec, loss[0], var_sum.item(
+                print(print_string.format(args.gpu, examples_per_sec, loss, var_sum.item(
                 ), var_sum.item()/var_cnt, time_sofar, training_time_left))
 
-                writer.add_scalar('loss', loss[0], global_step)
+                writer.add_scalar('loss', loss, global_step)
                 writer.add_scalar('learning_rate', current_lr, global_step)
                 writer.add_scalar(
                     'var average', var_sum.item()/var_cnt, global_step)
