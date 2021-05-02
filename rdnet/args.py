@@ -29,6 +29,7 @@ class Arg_train:
         self.activation = nn.SiLU
         self.batch_size = int(config['batch_size'])  # 4
         self.num_epochs = int(config['num_epochs'])  # 50
+        self.optim = config['optim']
         self.schedule = config['schedule']
         self.learning_rate = float(config['learning_rate'])  # 1e-4
         self.weight_decay = float(config['weight_decay'])  # 1e-2

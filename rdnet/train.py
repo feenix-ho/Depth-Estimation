@@ -274,12 +274,15 @@ def main_worker(gpu, ngpus_per_node, args):
     epoch = global_step // steps_per_epoch
 
     # Training parameters
-    optimizer = torch.optim.AdamW(params=model.parameters(), weight_decay=args.weight_decay,
-                                  lr=args.learning_rate, eps=args.adam_eps)
+    if args.optim == 'adam':
+        optimizer = torch.optim.Adam(params=model.parameters(), lr=args.learning_rate, eps=args.adam_eps)
+    elif args.optim == 'sgd':
+        optimizer = torch.optim.SGD(params=model.parameters(), lr=args.learning_rate, momentum=.9)
+    
     if args.schedule == 'cycle':
         scheduler = torch.optim.lr_scheduler.OneCycleLR(optimizer, max_lr=args.learning_rate, total_steps=num_total_steps)
     elif args.schedule == 'plateau':
-        scheduelr = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer)
+        scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, patience=1)
 
     while epoch < args.num_epochs:
         print(epoch, '/', args.num_epochs)
