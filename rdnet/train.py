@@ -112,14 +112,9 @@ def online_eval(model, dataloader_eval, gpu, ngpus):
         with torch.no_grad():
             image = eval_sample_batched['image'].to(DEVICE)
             gt_depth = eval_sample_batched['depth'].to(DEVICE)
-            valid_depth = eval_sample_batched['valid']
             embedding = eval_sample_batched['embedding'].to(DEVICE)
             location = eval_sample_batched['bbox'].to(DEVICE)
             mask = eval_sample_batched['mask'].to(DEVICE)
-
-            if not valid_depth:
-                # print('Invalid depth. continue.')
-                continue
 
             pred_depth = model(image, embedding, location).detach()
             loss = compute_loss(pred_depth, gt_depth, mask, eps=args.eps,
