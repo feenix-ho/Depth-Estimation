@@ -308,7 +308,7 @@ def main_worker(gpu, ngpus_per_node, args):
 
             print('[epoch][s/s_per_e/gs]: [{}][{}/{}/{}], loss: {:.12f}'.format(
                 epoch, step, steps_per_epoch, global_step, loss))
-            print('Current lr: {:.12f}'.format(current_lr))
+            print('Current lr: {:.12f}, {:.12f}'.format(current_lr, args.learning_rate))
             if np.isnan(loss.cpu().item()):
                 print('NaN in loss occurred. Aborting training.')
                 return -1
