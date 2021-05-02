@@ -199,10 +199,13 @@ class DataLoadPreprocess(Dataset):
                 if has_valid_depth:
                     depth_gt = np.asarray(depth_gt, dtype=np.float32)
                     depth_gt = np.expand_dims(depth_gt, axis=2)
+                    mask = np.zeros(depth_gt.shape, dtype=bool)
+                    mask[45:471, 41:601] = 1
                     depth_gt = depth_gt / 1000.0
+                    mask &= depth_gt > .1
 
                 sample = {'image': image, 'depth': depth_gt, 'embedding': embedding,
-                          'bbox': bbox, 'valid': has_valid_depth}
+                          'bbox': bbox, 'valid': has_valid_depth, 'mask': mask}
             else:
                 sample = {'image': image, 'embedding': embedding, 'bbox': bbox}
 
@@ -280,14 +283,13 @@ class ToTensor(object):
             return {'image': image, 'embedding': embedding, 'bbox': bbox}
 
         depth = self.to_tensor(sample['depth'])
-
+        mask = self.to_tensor(sample['mask']).to(torch.bool)
         if self.mode != 'train':
             valid_depth = sample['valid']
 
-            return {'image': image, 'embedding': embedding,
+            return {'image': image, 'embedding': embedding, 'mask': mask,
                     'bbox': bbox, 'depth': depth, 'valid': valid_depth}
-        else:
-            mask = self.to_tensor(sample['mask']).to(torch.bool)
+
         return {'image': image, 'mask': mask, 'embedding': embedding,
                 'bbox': bbox, 'depth': depth}
 
