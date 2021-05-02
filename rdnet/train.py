@@ -51,6 +51,7 @@ inv_normalize = transforms.Normalize(
     mean=[-0.485/0.229, -0.456/0.224, -0.406/0.225],
     std=[1/0.229, 1/0.224, 1/0.225]
 )
+silog_criterion = silog_loss(variance_focus=args.variance_focus)
 
 num_metrics = 10
 low_num = 7
@@ -246,7 +247,6 @@ def main_worker(gpu, ngpus_per_node, args):
 
     dataloader = Loader(args, 'train')
     dataloader_eval = Loader(args, 'online_eval')
-    silog_criterion = silog_loss(variance_focus=args.variance_focus)
 
     # Logging
     writer = SummaryWriter(args.log_directory + '/' +
@@ -334,13 +334,13 @@ def main_worker(gpu, ngpus_per_node, args):
                     'var average', var_sum.item()/var_cnt, global_step)
                 depth_gt = torch.where(
                     depth_gt < 1e-3, depth_gt * 0 + 1e3, depth_gt)
-                for i in range(num_log_images):
-                    writer.add_image(
-                        'depth_gt/image/{}'.format(i), normalize_result(1/depth_gt[i, :, :, :].data), global_step)
-                    writer.add_image(
-                        'depth_est/image/{}'.format(i), normalize_result(1/depth_est[i, :, :, :].data), global_step)
-                    writer.add_image(
-                        'image/image/{}'.format(i), inv_normalize(image[i, :, :, :]).data, global_step)
+                # for i in range(num_log_images):
+                #     writer.add_image(
+                #         'depth_gt/image/{}'.format(i), normalize_result(1/depth_gt[i, :, :, :].data), global_step)
+                #     writer.add_image(
+                #         'depth_est/image/{}'.format(i), normalize_result(1/depth_est[i, :, :, :].data), global_step)
+                #     writer.add_image(
+                #         'image/image/{}'.format(i), inv_normalize(image[i, :, :, :]).data, global_step)
                 writer.flush()
 
             if not args.do_online_eval and global_step and global_step % args.save_freq == 0:
