@@ -209,10 +209,6 @@ def main_worker(gpu, ngpus_per_node, args):
     best_eval_measures_higher_better = torch.zeros(num_metrics - low_num).cpu()
     best_eval_steps = np.zeros(num_metrics, dtype=np.int32)
 
-    # Training parameters
-    optimizer = torch.optim.AdamW(params=model.parameters(), weight_decay=args.weight_decay,
-                                  lr=args.learning_rate, eps=args.adam_eps)
-
     model_just_loaded = False
     if args.checkpoint_path != '':
         if os.path.isfile(args.checkpoint_path):
@@ -276,6 +272,12 @@ def main_worker(gpu, ngpus_per_node, args):
     steps_per_epoch = len(dataloader.data)
     num_total_steps = args.num_epochs * steps_per_epoch
     epoch = global_step // steps_per_epoch
+
+    # Training parameters
+    optimizer = torch.optim.AdamW(params=model.parameters(), weight_decay=args.weight_decay,
+                                  lr=args.learning_rate, eps=args.adam_eps)
+    scheduler = torch.optim.lr_scheduler.OneCycleLR(optimizer, max_lr=args.learning_rate, total_steps=num_total_steps)
+
     while epoch < args.num_epochs:
         print(epoch, '/', args.num_epochs)
         for step, sample_batched in enumerate(dataloader.data):
@@ -305,6 +307,7 @@ def main_worker(gpu, ngpus_per_node, args):
                 param_group['lr'] = current_lr
 
             optimizer.step()
+            scheduler.step()
 
             print('[epoch][s/s_per_e/gs]: [{}][{}/{}/{}], loss: {:.12f}'.format(
                 epoch, step, steps_per_epoch, global_step, loss))
