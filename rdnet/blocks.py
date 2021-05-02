@@ -6,10 +6,10 @@ from einops import rearrange, repeat
 from einops.layers.torch import Rearrange
 
 
-def _make_fusion_block(features, use_bn):
+def _make_fusion_block(features, use_bn, activation):
     return FeatureFusionBlock(
         features,
-        nn.ReLU(False),
+        activation(False),
         deconv=False,
         bn=use_bn,
         expand=False,
@@ -297,7 +297,7 @@ class ReassembleBlock(nn.Module):
 
 
 class RefineBlock(nn.Module):
-    def __init__(self, in_shape, out_shape, groups=1, expand=False, use_bn=False, **kwargs):
+    def __init__(self, in_shape, out_shape, activation, groups=1, expand=False, use_bn=False, **kwargs):
         super().__init__()
 
         out_shape1 = out_shape
@@ -360,7 +360,7 @@ class RefineBlock(nn.Module):
         self.refinenets = nn.ModuleList()
 
         for _ in range(4):
-            self.refinenets.append(_make_fusion_block(out_shape, use_bn))
+            self.refinenets.append(_make_fusion_block(out_shape, use_bn, activation))
 
     def forward(self, embs):
         y = None

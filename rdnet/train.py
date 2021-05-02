@@ -30,7 +30,6 @@ import torch.distributed as dist
 import torch.multiprocessing as mp
 
 from tensorboardX import SummaryWriter
-from nystrom_attention import Nystromer
 
 import matplotlib
 import matplotlib.cm
@@ -184,6 +183,9 @@ def main_worker(gpu, ngpus_per_node, args):
                   use_readout=args.use_readout,
                   hooks=args.hooks,
                   landmarks=args.landmarks,
+                  scale=args.scale,
+                  shift=args.shift,
+                  invert=args.invert,
                   transformer=args.transformer)
     model.train()
     num_params = sum([np.prod(p.size()) for p in model.parameters()])

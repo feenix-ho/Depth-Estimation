@@ -1,6 +1,7 @@
 import configparser
 
 from nystrom_attention import Nystromer
+from torch import nn
 
 
 class Arg_train:
@@ -25,6 +26,7 @@ class Arg_train:
         self.use_readout = config['use_readout']  # ignore
         self.hooks = list(
             map(int, config['hooks'].split(',')))  # 3, 6, 9, 12
+        self.activation = nn.SiLU
         self.batch_size = int(config['batch_size'])  # 4
         self.num_epochs = int(config['num_epochs'])  # 50
         self.learning_rate = float(config['learning_rate'])  # 1e-4
@@ -39,6 +41,9 @@ class Arg_train:
         self.trimmed = float(config['trimmed'])
         self.num_scale = int(config['num_scale'])
         self.alpha = float(config['alpha'])
+        self.scale = float(config['scale']),
+        self.shift = float(config['shift']),
+        self.invert = True,
         self.model_name = config['model']
         self.gpu = 0
         self.log_directory = config['log_directory']

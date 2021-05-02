@@ -70,6 +70,7 @@ class DensePrediction(nn.Module):
         inp_dim,
         hidden_dims,
         out_dim,
+        activation,
         **kwargs
     ):
         super().__init__()
@@ -88,6 +89,7 @@ class DensePrediction(nn.Module):
         self.refine = RefineBlock(
             in_shape=hidden_dims,
             out_shape=out_dim,
+            activation=activation
             **kwargs
         )
 
@@ -105,8 +107,14 @@ class RDNet(nn.Module):
     Params:
     '''
 
-    def __init__(self, image_size, patch_size, knowledge_dims, dense_dims, latent_dim, channels=3, **kwargs):
+    def __init__(self, image_size, patch_size, knowledge_dims, dense_dims, latent_dim,
+                 activation, scale=1.0, shift=0.0, invert=False, channels=3, **kwargs
+                 ):
         super().__init__()
+        self.scale = scale
+        self.shift = shift
+        self.invert = invert
+
         patch_dim = channels * patch_size ** 2
         num_patches = (image_size[0] / patch_size, image_size[1] / patch_size)
         max_patches = num_patches[0] * num_patches[1]
@@ -126,6 +134,7 @@ class RDNet(nn.Module):
             out_dim=latent_dim,
             max_patches=max_patches,
             num_patches=num_patches,
+            activation=activation,
             **kwargs
         )
         self.head = nn.Sequential(
@@ -133,9 +142,9 @@ class RDNet(nn.Module):
                       kernel_size=3, stride=1, padding=1),
             Interpolate(scale_factor=2, mode="bilinear"),
             nn.Conv2d(latent_dim // 2, 32, kernel_size=3, stride=1, padding=1),
-            nn.SiLU(),
+            activation(True),
             nn.Conv2d(32, 1, kernel_size=1, stride=1, padding=0),
-            nn.SiLU(),
+            activation(True),
             nn.Identity(),
         )
 
@@ -147,13 +156,21 @@ class RDNet(nn.Module):
         assert (patches * patches).sum() > 1e-3
         results = self.dense(patches)
         assert (results * results).sum() > 1e-3
-        results = self.head(results)
+        inv_depth = self.head(results)
         try:
-            assert (results * results).sum() > 1e-3
+            assert (inv_depth * inv_depth).sum() > 1e-3
         except:
             print(results)
+
+        if self.invert:
+            depth = self.scale * inv_depth + self.shift
+            depth[depth < 1e-8] = 1e-8
+            depth = 1.0 / depth
+        else:
+            depth = inv_depth
+
         return F.interpolate(
-            results,
+            depth,
             size=images.shape[2:4],
             mode="bicubic",
             align_corners=False
