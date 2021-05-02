@@ -150,11 +150,11 @@ def online_eval(model, dataloader_eval, gpu, ngpus):
 
             valid_mask = np.logical_and(valid_mask, eval_mask)
 
-        measures = loss, compute_errors(
-            gt_depth[valid_mask], pred_depth[valid_mask])
+        measures = np.asarray(compute_errors(
+            gt_depth[valid_mask], pred_depth[valid_mask]))
 
         try:
-            eval_measures[:num_metrics] += np.asarray(measures)
+            eval_measures[:num_metrics] += np.insert(measures, 0, loss, axis=0)
         except:
             print(np.asarray(measures).shape)
             assert False
