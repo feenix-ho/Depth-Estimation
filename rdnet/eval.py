@@ -67,8 +67,10 @@ def compute_reg(preds, targets, masks, num_scale=4):
         # sum_grads = torch.sum(abs_grads * masks, (2, 3))
         # return sum_grads / masks.sum((2, 3))
 
-        reg = ((preds - targets) ** 2) * masks
-        return reg.sum((2, 3)) / masks.sum((2, 3))
+        pred = preds[masks]
+        target = targets[masks]
+        mse = (pred - target) ** 2
+        return torch.sqrt(mse.mean())
 
     total = 0
     step = 1

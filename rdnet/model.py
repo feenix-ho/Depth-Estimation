@@ -148,16 +148,16 @@ class RDNet(nn.Module):
         )
 
     def forward(self, images, embs, locations):
-        assert (images * images).sum() > 1e-3
+        assert (images * images).sum() > 1e-6
         patches = self.to_patch(images)
-        assert (patches * patches).sum() > 1e-3
+        assert (patches * patches).sum() > 1e-6
         patches = self.knowledge(patches, embs, locations)
-        assert (patches * patches).sum() > 1e-3
+        assert (patches * patches).sum() > 1e-6
         results = self.dense(patches)
-        assert (results * results).sum() > 1e-3
+        assert (results * results).sum() > 1e-6
         inv_depth = self.head(results)
         try:
-            assert (inv_depth ** 2).sum() > 1e-3
+            assert (inv_depth ** 2).sum() > 1e-6
         except:
             print(inv_depth)
             assert False
