@@ -10,12 +10,7 @@ from kornia import filters
 def compute_errors(gt, pred):
     dim = (2, 3)
     thresh = np.maximum((gt / pred), (pred / gt))
-    try:
-        d1 = (thresh < 1.25).mean(dim)
-    except:
-        print(gt.shape)
-        print(pred.shape)
-        assert False
+    d1 = (thresh < 1.25).mean(dim)
     d2 = (thresh < 1.25 ** 2).mean(dim)
     d3 = (thresh < 1.25 ** 3).mean(dim)
 
