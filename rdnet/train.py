@@ -145,7 +145,7 @@ def online_eval(model, dataloader_eval, gpu, ngpus):
 
             valid_mask = np.logical_and(valid_mask, eval_mask)
 
-        print(valid_mask.shape)
+        print(gt_depth[valid_mask].shape, pred_depth[valid_mask].shape)
         measures = compute_errors(gt_depth[valid_mask], pred_depth[valid_mask])
         try:
             eval_measures[:num_metrics] += np.insert(measures, 0, loss, axis=0)
