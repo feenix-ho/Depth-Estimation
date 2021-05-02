@@ -2,6 +2,6 @@
     "python.linting.pylintEnabled": false,
     "python.linting.pycodestyleEnabled": false,
     "python.linting.enabled": true,
-    "python.pythonPath": "D:\\Softwares\\Anaconda3\\envs\\torchenv\\python.exe",
+    "python.pythonPath": "C:\\Users\\Quang\\AppData\\Local\\Programs\\Python\\Python39\\python.exe",
     "python.linting.flake8Enabled": true
 }
