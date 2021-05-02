@@ -159,7 +159,7 @@ class RDNet(nn.Module):
         try:
             assert (inv_depth ** 2).sum() > 1e-3
         except:
-            print(results)
+            print(inv_depth)
             assert False
 
         if self.invert:
