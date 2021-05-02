@@ -117,7 +117,7 @@ def compute_loss(preds, targets, masks, trimmed=1., num_scale=4, alpha=.5, eps=1
         loss += alpha * compute_reg(aligned_preds, aligned_targets,
                                     masks, num_scale)
     assert torch.isnan(loss).sum() == 0
-    return loss.mean(dim=0)
+    return loss.mean()
 
 class silog_loss(nn.Module):
     def __init__(self, variance_focus):
