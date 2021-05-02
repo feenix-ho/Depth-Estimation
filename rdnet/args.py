@@ -41,9 +41,9 @@ class Arg_train:
         self.trimmed = float(config['trimmed'])
         self.num_scale = int(config['num_scale'])
         self.alpha = float(config['alpha'])
-        self.scale = float(config['scale']),
-        self.shift = float(config['shift']),
-        self.invert = True,
+        self.scale = float(config['scale'])
+        self.shift = float(config['shift'])
+        self.invert = True
         self.model_name = config['model']
         self.gpu = 0
         self.log_directory = config['log_directory']
