@@ -8,25 +8,26 @@ from kornia import filters
 
 
 def compute_errors(gt, pred):
+    dims = (2, 3)
     thresh = np.maximum((gt / pred), (pred / gt))
-    d1 = (thresh < 1.25).mean()
-    d2 = (thresh < 1.25 ** 2).mean()
-    d3 = (thresh < 1.25 ** 3).mean()
+    d1 = (thresh < 1.25).mean(dim)
+    d2 = (thresh < 1.25 ** 2).mean(dim)
+    d3 = (thresh < 1.25 ** 3).mean(dim)
 
     rmse = (gt - pred) ** 2
-    rmse = np.sqrt(rmse.mean())
+    rmse = np.sqrt(rmse.mean(dim))
 
     rmse_log = (np.log(gt) - np.log(pred)) ** 2
-    rmse_log = np.sqrt(rmse_log.mean())
+    rmse_log = np.sqrt(rmse_log.mean(dim))
 
-    abs_rel = np.mean(np.abs(gt - pred) / gt)
-    sq_rel = np.mean(((gt - pred) ** 2) / gt)
+    abs_rel = np.mean(np.abs(gt - pred) / gt, dim)
+    sq_rel = np.mean(((gt - pred) ** 2) / gt, dim)
 
     err = np.log(pred) - np.log(gt)
-    silog = np.sqrt(np.mean(err ** 2) - np.mean(err) ** 2) * 100
+    silog = np.sqrt(np.mean(err ** 2, dim) - np.mean(err, dim) ** 2) * 100
 
     err = np.abs(np.log10(pred) - np.log10(gt))
-    log10 = np.mean(err)
+    log10 = np.mean(err, dim)
 
     return silog, log10, abs_rel, sq_rel, rmse, rmse_log, d1, d2, d3
 

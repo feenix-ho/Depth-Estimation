@@ -125,9 +125,9 @@ def online_eval(model, dataloader_eval, gpu, ngpus):
             loss = compute_loss(pred_depth, gt_depth, mask, eps=args.eps,
                                 trimmed=args.trimmed, num_scale=args.num_scale, alpha=args.alpha)
 
-            pred_depth = pred_depth.cpu().numpy().squeeze()
-            gt_depth = gt_depth.cpu().numpy().squeeze()
-            loss = loss.cpu().numpy().squeeze()
+            pred_depth = pred_depth.cpu().numpy()
+            gt_depth = gt_depth.cpu().numpy()
+            loss = loss.cpu().numpy()
 
         pred_depth[pred_depth < args.min_depth_eval] = args.min_depth_eval
         pred_depth[pred_depth > args.max_depth_eval] = args.max_depth_eval
