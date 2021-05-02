@@ -111,8 +111,9 @@ def compute_loss(preds, targets, masks, trimmed=1., num_scale=4, alpha=.5, eps=1
     assert torch.isnan(aligned_preds).sum() == 0
     assert torch.isnan(aligned_targets).sum() == 0
 
-    loss = compute_ssi(aligned_preds, aligned_targets, masks, trimmed) / 2
-    assert torch.isnan(loss).sum() == 0
+    # loss = compute_ssi(aligned_preds, aligned_targets, masks, trimmed) / 2
+    # assert torch.isnan(loss).sum() == 0
+    loss = 0
     if alpha > 0.:
         loss += alpha * compute_reg(aligned_preds, aligned_targets,
                                     masks, num_scale)
