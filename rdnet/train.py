@@ -328,7 +328,6 @@ def main_worker(gpu, ngpus_per_node, args):
                 ), var_sum.item()/var_cnt, time_sofar, training_time_left))
 
                 writer.add_scalar('loss', loss, global_step)
-                writer.add_scalar('learning_rate', current_lr, global_step)
                 writer.add_scalar(
                     'var average', var_sum.item()/var_cnt, global_step)
                 depth_gt = torch.where(
