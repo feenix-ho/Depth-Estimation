@@ -53,6 +53,7 @@ inv_normalize = transforms.Normalize(
 )
 
 num_metrics = 10
+low_num = 7
 eval_metrics = ['loss', 'silog', 'abs_rel', 'log10',
                 'rms', 'sq_rel', 'log_rms', 'd1', 'd2', 'd3']
 
@@ -202,8 +203,8 @@ def main_worker(gpu, ngpus_per_node, args):
     print("Model Initialized")
 
     global_step = 0
-    best_eval_measures_lower_better = torch.zeros(6).cpu() + 1/args.eps
-    best_eval_measures_higher_better = torch.zeros(3).cpu()
+    best_eval_measures_lower_better = torch.zeros(low_num).cpu() + 1/args.eps
+    best_eval_measures_higher_better = torch.zeros(num_metrics - low_num).cpu()
     best_eval_steps = np.zeros(9, dtype=np.int32)
 
     # Training parameters
@@ -359,12 +360,13 @@ def main_worker(gpu, ngpus_per_node, args):
                             eval_metrics[i], int(global_step))
                         measure = eval_measures[i]
                         is_best = False
-                        if i < 6 and measure < best_eval_measures_lower_better[i]:
+
+                        if i < low_num and measure < best_eval_measures_lower_better[i]:
                             old_best = best_eval_measures_lower_better[i].item(
                             )
                             best_eval_measures_lower_better[i] = measure.item()
                             is_best = True
-                        elif i >= 6 and measure > best_eval_measures_higher_better[i-6]:
+                        elif i >= low_num and measure > best_eval_measures_higher_better[i - low_num]:
                             old_best = best_eval_measures_higher_better[i-6].item(
                             )
                             best_eval_measures_higher_better[i -
