@@ -153,7 +153,7 @@ def online_eval(model, dataloader_eval, gpu, ngpus):
         measures = loss, compute_errors(
             gt_depth[valid_mask], pred_depth[valid_mask])
 
-        print(measures.shape)
+        print(np.asarray(measures).shape)
         eval_measures[:num_metrics] += np.asarray(measures)
         eval_measures[num_metrics] += 1
 
