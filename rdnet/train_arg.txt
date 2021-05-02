@@ -29,5 +29,5 @@ min_depth_eval = 1e-3
 max_depth_eval = 10
 log_freq = 20
 save_freq = 500
-eval_freq = 198
+eval_freq = 99
 end_learning_rate = -1
