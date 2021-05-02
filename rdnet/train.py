@@ -28,6 +28,7 @@ import numpy as np
 import torch.backends.cudnn as cudnn
 import torch.distributed as dist
 import torch.multiprocessing as mp
+from torchvision import transforms
 
 from tensorboardX import SummaryWriter
 
@@ -149,7 +150,8 @@ def online_eval(model, dataloader_eval, gpu, ngpus):
 
             valid_mask = np.logical_and(valid_mask, eval_mask)
 
-        measures = loss, compute_errors(gt_depth[valid_mask], pred_depth[valid_mask])
+        measures = loss, compute_errors(
+            gt_depth[valid_mask], pred_depth[valid_mask])
         eval_measures[:num_metrics] += np.asarray(measures)
         eval_measures[num_metrics] += 1
 
@@ -157,12 +159,12 @@ def online_eval(model, dataloader_eval, gpu, ngpus):
     eval_measures /= cnt
     print('Computing errors for {} eval samples'.format(cnt))
     print("{:>7}, {:>7}, {:>7}, {:>7}, {:>7}, {:>7}, {:>7}, {:>7}, {:>7}, {:>7}".format(
-            'loss', 'silog', 'abs_rel', 'log10', 'rms', 'sq_rel', 'log_rms', 'd1', 'd2', 'd3'))
-    
+        'loss', 'silog', 'abs_rel', 'log10', 'rms', 'sq_rel', 'log_rms', 'd1', 'd2', 'd3'))
+
     for i in range(num_metrics - 1):
         print('{:7.3f}, '.format(eval_measures[i]), end='')
     print('{:7.3f}'.format(eval_measures[-2]))
-    
+
     return eval_measures
 
 
