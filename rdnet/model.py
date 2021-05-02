@@ -89,7 +89,7 @@ class DensePrediction(nn.Module):
         self.refine = RefineBlock(
             in_shape=hidden_dims,
             out_shape=out_dim,
-            activation=activation
+            activation=activation,
             **kwargs
         )
 

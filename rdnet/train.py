@@ -182,6 +182,7 @@ def main_worker(gpu, ngpus_per_node, args):
                   emb_size=args.emb_size,
                   use_readout=args.use_readout,
                   hooks=args.hooks,
+                  activation=args.activation,
                   landmarks=args.landmarks,
                   scale=args.scale,
                   shift=args.shift,
