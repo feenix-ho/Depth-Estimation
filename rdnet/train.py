@@ -352,7 +352,7 @@ def main_worker(gpu, ngpus_per_node, args):
                 if eval_measures is not None:
                     for i in range(len(eval_metrics)):
                         eval_summary_writer.add_scalar(
-                            eval_metrics[i], eval_measures[i].cpu(), int(global_step))
+                            eval_metrics[i], int(global_step))
                         measure = eval_measures[i]
                         is_best = False
                         if i < 6 and measure < best_eval_measures_lower_better[i]:
