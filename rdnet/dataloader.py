@@ -42,7 +42,7 @@ def preprocessing_transforms(mode):
     ])
 
 
-class BtsDataLoader(object):
+class Loader(object):
     def __init__(self, args, mode):
         if mode == 'train':
             self.training_samples = DataLoadPreprocess(

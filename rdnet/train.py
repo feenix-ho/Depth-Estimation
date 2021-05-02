@@ -38,7 +38,7 @@ from tqdm import tqdm
 
 from model import RDNet
 from eval import compute_errors, compute_loss
-from dataloader import *
+from dataloader import Loader
 from args import Arg_train
 
 
@@ -51,7 +51,8 @@ inv_normalize = transforms.Normalize(
     std=[1/0.229, 1/0.224, 1/0.225]
 )
 
-eval_metrics = ['silog', 'abs_rel', 'log10',
+num_metrics = 10
+eval_metrics = ['loss', 'silog', 'abs_rel', 'log10',
                 'rms', 'sq_rel', 'log_rms', 'd1', 'd2', 'd3']
 
 
@@ -105,7 +106,6 @@ def normalize_result(value, vmin=None, vmax=None):
 
 
 def online_eval(model, dataloader_eval, gpu, ngpus):
-    num_metrics = 10
     eval_measures = np.zeros(num_metrics + 1)
     for _, eval_sample_batched in enumerate(tqdm(dataloader_eval.data)):
         with torch.no_grad():
@@ -241,8 +241,8 @@ def main_worker(gpu, ngpus_per_node, args):
 
     cudnn.benchmark = True
 
-    dataloader = BtsDataLoader(args, 'train')
-    dataloader_eval = BtsDataLoader(args, 'online_eval')
+    dataloader = Loader(args, 'train')
+    dataloader_eval = Loader(args, 'online_eval')
 
     # Logging
     writer = SummaryWriter(args.log_directory + '/' +
@@ -350,7 +350,7 @@ def main_worker(gpu, ngpus_per_node, args):
                     model, dataloader_eval, gpu, ngpus_per_node)
 
                 if eval_measures is not None:
-                    for i in range(9):
+                    for i in range(len(eval_metrics)):
                         eval_summary_writer.add_scalar(
                             eval_metrics[i], eval_measures[i].cpu(), int(global_step))
                         measure = eval_measures[i]
