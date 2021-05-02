@@ -298,10 +298,10 @@ def main_worker(gpu, ngpus_per_node, args):
             assert 0 not in loss
             loss.backward()
 
-            # for param_group in optimizer.param_groups:
-            #     current_lr = (args.learning_rate - end_learning_rate) * \
-            #         (1 - global_step / num_total_steps) ** 0.9 + end_learning_rate
-            #     param_group['lr'] = current_lr
+            for param_group in optimizer.param_groups:
+                current_lr = (args.learning_rate - end_learning_rate) * \
+                    (1 - global_step / num_total_steps) ** 0.9 + end_learning_rate
+                param_group['lr'] = current_lr
 
             optimizer.step()
 

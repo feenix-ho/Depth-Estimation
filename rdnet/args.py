@@ -43,7 +43,7 @@ class Arg_train:
         self.alpha = float(config['alpha'])
         self.scale = float(config['scale'])
         self.shift = float(config['shift'])
-        self.invert = True
+        self.invert = False
         self.variance_focus = float(config['focus'])
         self.model_name = config['model']
         self.gpu = 0
