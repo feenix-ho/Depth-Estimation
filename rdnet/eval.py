@@ -29,7 +29,8 @@ def compute_errors(gt, pred):
     err = np.abs(np.log10(pred) - np.log10(gt))
     log10 = np.mean(err, dim)
 
-    return silog, log10, abs_rel, sq_rel, rmse, rmse_log, d1, d2, d3
+    errors = np.asarray([silog, log10, abs_rel, sq_rel, rmse, rmse_log, d1, d2, d3])
+    return errors.mean(1)
 
 
 def compute_ssi(preds, targets, masks, trimmed=1., eps=1e-4):

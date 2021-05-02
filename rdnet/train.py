@@ -150,13 +150,12 @@ def online_eval(model, dataloader_eval, gpu, ngpus):
 
             valid_mask = np.logical_and(valid_mask, eval_mask)
 
-        measures = np.asarray(compute_errors(
-            gt_depth[valid_mask], pred_depth[valid_mask]))
+        measures = compute_errors(gt_depth[valid_mask], pred_depth[valid_mask])
 
         try:
             eval_measures[:num_metrics] += np.insert(measures, 0, loss, axis=0)
         except:
-            print(np.asarray(measures).shape)
+            print(measures.shape)
             assert False
         eval_measures[num_metrics] += 1
 
@@ -292,8 +291,7 @@ def main_worker(gpu, ngpus_per_node, args):
             location = sample_batched['bbox'].to(DEVICE)
             mask = sample_batched['mask'].to(DEVICE)
 
-            depth_est = model(
-                image, embedding, location)
+            depth_est = model(image, embedding, location)
 
             # computeloss
             loss = compute_loss(depth_est, depth_gt, mask, eps=args.eps,
