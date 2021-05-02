@@ -276,7 +276,10 @@ def main_worker(gpu, ngpus_per_node, args):
     # Training parameters
     optimizer = torch.optim.AdamW(params=model.parameters(), weight_decay=args.weight_decay,
                                   lr=args.learning_rate, eps=args.adam_eps)
-    scheduler = torch.optim.lr_scheduler.OneCycleLR(optimizer, max_lr=args.learning_rate, total_steps=num_total_steps)
+    if args.schedule == 'cycle':
+        scheduler = torch.optim.lr_scheduler.OneCycleLR(optimizer, max_lr=args.learning_rate, total_steps=num_total_steps)
+    elif args.schedule == 'plateau':
+        scheduelr = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer)
 
     while epoch < args.num_epochs:
         print(epoch, '/', args.num_epochs)
@@ -307,7 +310,8 @@ def main_worker(gpu, ngpus_per_node, args):
             #     param_group['lr'] = current_lr
 
             optimizer.step()
-            scheduler.step()
+            if args.schedule == 'cycle':
+                scheduler.step()
 
             print('[epoch][s/s_per_e/gs]: [{}][{}/{}/{}], loss: {:.12f}'.format(
                 epoch, step, steps_per_epoch, global_step, loss))
@@ -359,6 +363,9 @@ def main_worker(gpu, ngpus_per_node, args):
                     model, dataloader_eval, gpu, ngpus_per_node)
 
                 if eval_measures is not None:
+                    if args.schedule == 'plateau':
+                        scheduler.step(eval_measures[0])
+                    
                     for i in range(len(eval_metrics)):
                         eval_summary_writer.add_scalar(
                             eval_metrics[i], int(global_step))
