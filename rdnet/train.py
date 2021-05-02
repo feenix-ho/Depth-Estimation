@@ -131,7 +131,7 @@ def online_eval(model, dataloader_eval, gpu, ngpus):
 
         valid_mask = np.logical_and(
             gt_depth > args.min_depth_eval, gt_depth < args.max_depth_eval)
-        print(valid_mask.shape)
+        
         if args.eigen_crop or args.garg_crop:
             b, _, gt_height, gt_width = gt_depth.shape
             eval_mask = np.zeros(valid_mask.shape)
