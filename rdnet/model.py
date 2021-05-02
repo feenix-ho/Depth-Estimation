@@ -157,7 +157,7 @@ class RDNet(nn.Module):
         assert (results * results).sum() > 1e-6
         inv_depth = self.head(results)
         try:
-            assert (inv_depth ** 2).sum() > 1e-6
+            # assert (inv_depth ** 2).sum() > 1e-6
         except:
             print(inv_depth)
             assert False
