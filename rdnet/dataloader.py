@@ -205,7 +205,7 @@ class DataLoadPreprocess(Dataset):
                     mask &= depth_gt > .1
 
                 sample = {'image': image, 'depth': depth_gt, 'embedding': embedding,
-                          'bbox': bbox, 'valid': has_valid_depth, 'mask': mask}
+                          'bbox': bbox, 'mask': mask}
             else:
                 sample = {'image': image, 'embedding': embedding, 'bbox': bbox}
 
@@ -284,11 +284,6 @@ class ToTensor(object):
 
         depth = self.to_tensor(sample['depth'])
         mask = self.to_tensor(sample['mask']).to(torch.bool)
-        if self.mode != 'train':
-            valid_depth = sample['valid']
-
-            return {'image': image, 'embedding': embedding, 'mask': mask,
-                    'bbox': bbox, 'depth': depth, 'valid': valid_depth}
 
         return {'image': image, 'mask': mask, 'embedding': embedding,
                 'bbox': bbox, 'depth': depth}
