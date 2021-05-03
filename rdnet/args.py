@@ -7,7 +7,7 @@ from torch import nn
 class Arg_train:
     def __init__(self):
         configs = configparser.ConfigParser()
-        configs.read('train_arg.txt')
+        configs.read('rdnet/train_arg.txt')
         config = configs['COLAB']
         # drive/MyDrive/dataset
         self.data_path = config['data_path']
