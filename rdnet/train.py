@@ -276,7 +276,8 @@ def main_worker(gpu, ngpus_per_node, args):
 
     # Training parameters
     if args.optim == 'adam':
-        optimizer = torch.optim.Adam(params=model.parameters(), lr=args.learning_rate, eps=args.adam_eps)
+        optimizer = torch.optim.AdamW(params=model.parameters(), lr=args.learning_rate,
+                                      eps=args.adam_eps, weight_decay=args.weight_decay)
     elif args.optim == 'sgd':
         optimizer = torch.optim.SGD(params=model.parameters(), lr=args.learning_rate, momentum=.9)
     
