@@ -282,7 +282,8 @@ def main_worker(gpu, ngpus_per_node, args):
     if args.schedule == 'cycle':
         scheduler = torch.optim.lr_scheduler.OneCycleLR(optimizer, max_lr=args.learning_rate, total_steps=num_total_steps)
     elif args.schedule == 'plateau':
-        scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, patience=1)
+        scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, patience=args.patience, # threshold_mode='abs',
+                                                               threshold=args.thresh, verbose=True)
 
     while epoch < args.num_epochs:
         print(epoch, '/', args.num_epochs)

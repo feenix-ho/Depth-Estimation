@@ -36,6 +36,8 @@ class Arg_train:
         self.adam_eps = float(config['adam_eps'])  # 1e-3
         self.num_threads = int(config['num_threads'])  # 1
         self.mode = 'train'
+        self.patience = int(config['patience'])
+        self.thresh = float(config['thresh'])
         self.checkpoint_path = config['checkpoint_path']
         self.landmarks = int(config['landmarks'])  # 512
         self.retrain = True
