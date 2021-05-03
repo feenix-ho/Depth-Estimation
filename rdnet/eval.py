@@ -16,25 +16,27 @@ def compute_errors(depths, preds, masks):
         gt = depth[mask]
         pred = est[mask]
 
-        gt *= np.mean(pred / gt)
+        gt *= np.median(pred) / np.median(gt)
 
-        err = np.abs(np.log(pred) - np.log(gt))
-        d1 = (err < np.log(1.25) * 1).mean()
-        d2 = (err < np.log(1.25) * 2).mean()
-        d3 = (err < np.log(1.25) * 3).mean()
+        err = np.log(pred) - np.log(gt)
+        thresh = np.abs(err)
+        d1 = (thresh < np.log(1.25) * 1).mean()
+        d2 = (thresh < np.log(1.25) * 2).mean()
+        d3 = (thresh < np.log(1.25) * 3).mean()
 
-        rmse = (gt - pred) ** 2
-        rmse = np.sqrt(rmse.mean())
+        sqe = (gt - pred) ** 2
+        rmse = np.sqrt(sqe.mean())
         abs_rel = np.mean(np.abs(gt - pred) / gt)
-        sq_rel = np.mean(((gt - pred) ** 2) / gt)
+        sq_rel = np.mean(sqe / gt)
 
         mse_log = np.mean(err ** 2)
         rmse_log = np.sqrt(mse_log)
         silog = np.sqrt(mse_log - np.mean(err) ** 2) * 100
-        log10 = np.mean(err / np.log(10))
+        log10 = np.mean(thresh / np.log(10))
 
         errors += np.asarray([silog, log10, abs_rel, sq_rel, rmse, rmse_log, d1, d2, d3])
         cnt += 1
+
     return errors / cnt
 
 
@@ -131,7 +133,7 @@ class silog_loss(nn.Module):
     def forward(self, depth_est, depth_gt, mask):
         try:
             d = torch.log(depth_est[mask]) - torch.log(depth_gt[mask])
-            return (d ** 2).mean() - self.variance_focus * (d.mean() ** 2)
+            return torch.sqrt((d ** 2).mean() - self.variance_focus * (d.mean() ** 2)) * 10.
         except:
             print(depth_gt.min())
             assert False

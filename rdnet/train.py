@@ -107,6 +107,12 @@ def normalize_result(value, vmin=None, vmax=None):
 
     return np.expand_dims(value, 0)
 
+def standardize(depth_map):
+    depth_map[depth_map < args.min_depth_eval] = args.min_depth_eval
+    depth_map[depth_map > args.max_depth_eval] = args.max_depth_eval
+    depth_map[np.isinf(depth_map)] = args.max_depth_eval
+    depth_map[np.isnan(depth_map)] = args.min_depth_eval
+    return depth_map
 
 def online_eval(model, dataloader_eval, gpu, ngpus):
     eval_measures = np.zeros(num_metrics + 1)
@@ -118,19 +124,16 @@ def online_eval(model, dataloader_eval, gpu, ngpus):
             location = eval_sample_batched['bbox'].to(DEVICE)
             mask = eval_sample_batched['mask'].to(DEVICE)
 
-            pred_depth = model(image, embedding, location).detach()
+            disp_est = model(image, embedding, location).detach()
+            disp_gt = 1. / gt_depth
             # loss = compute_loss(pred_depth, gt_depth, mask, eps=args.eps,
             #                     trimmed=args.trimmed, num_scale=args.num_scale, alpha=args.alpha)
-            loss = silog_criterion(pred_depth, gt_depth, mask)
+            loss = silog_criterion(disp_est, disp_gt, mask)
 
-            pred_depth = pred_depth.cpu().numpy()
+            depth_est = standardize(1. / disp_est)
+            pred_depth = depth_est.cpu().numpy()
             gt_depth = gt_depth.cpu().numpy()
             loss = loss.cpu().numpy()
-
-        pred_depth[pred_depth < args.min_depth_eval] = args.min_depth_eval
-        pred_depth[pred_depth > args.max_depth_eval] = args.max_depth_eval
-        pred_depth[np.isinf(pred_depth)] = args.max_depth_eval
-        pred_depth[np.isnan(pred_depth)] = args.min_depth_eval
 
         valid_mask = np.logical_and(
             gt_depth > args.min_depth_eval, gt_depth < args.max_depth_eval)
@@ -297,13 +300,14 @@ def main_worker(gpu, ngpus_per_node, args):
             location = sample_batched['bbox'].to(DEVICE)
             mask = sample_batched['mask'].to(DEVICE)
 
-            depth_est = model(image, embedding, location)
+            disp_est = model(image, embedding, location)
+            disp_gt = 1. / depth_gt
 
             # computeloss
             # loss = compute_loss(depth_est, depth_gt, mask, eps=args.eps,
             #                     trimmed=args.trimmed, num_scale=args.num_scale, alpha=args.alpha)
             # assert depth_est.min() > 0
-            loss = silog_criterion(depth_est, depth_gt, mask)
+            loss = silog_criterion(disp_est, disp_gt, mask)
 
             assert 0 not in loss
             loss.backward()

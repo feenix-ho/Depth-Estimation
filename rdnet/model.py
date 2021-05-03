@@ -169,6 +169,7 @@ class RDNet(nn.Module):
                 print(self.scale, self.shift)
                 print(inv_depth.shape)
                 assert False
+                
             depth[depth < 1e-8] = 1e-8
             depth = 1.0 / depth
         else:
