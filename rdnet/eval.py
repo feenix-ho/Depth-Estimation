@@ -135,7 +135,7 @@ class silog_loss(nn.Module):
         d = torch.log(depth_est[mask]) - torch.log(depth_gt[mask])
         return torch.sqrt((d ** 2).mean() - self.variance_focus * (d.mean() ** 2))
 
-    def forward(self, depth_est, depth_gt, mask):
+    def forward(self, preds, targets, masks):
         total = 0
         step = 1
 
