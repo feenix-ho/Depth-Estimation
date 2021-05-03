@@ -34,7 +34,7 @@ def compute_errors(depths, preds, masks):
         silog = np.sqrt(mse_log - np.mean(err) ** 2) * 100
         log10 = np.mean(thresh / np.log(10))
 
-        errors += np.asarray([silog, log10, abs_rel, sq_rel, rmse, rmse_log, d1, d2, d3])
+        errors += np.asarray([silog, abs_rel, log10, rmse, sq_rel, rmse_log, d1, d2, d3])
         cnt += 1
 
     return errors / cnt

@@ -151,11 +151,11 @@ def online_eval(model, dataloader_eval, gpu, ngpus):
 
         measures = compute_errors(gt_depth, pred_depth, valid_mask)
         try:
-            eval_measures[:num_metrics] += np.insert(measures, 0, loss, axis=0)
+            eval_measures[:-1] += np.insert(measures, 0, loss, axis=0)
         except:
             print(measures.shape)
             assert False
-        eval_measures[num_metrics] += 1
+        eval_measures[-1] += 1
 
     cnt = int(eval_measures[-1])
     eval_measures /= cnt
