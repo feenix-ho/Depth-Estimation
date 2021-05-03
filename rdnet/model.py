@@ -144,7 +144,6 @@ class RDNet(nn.Module):
             nn.Conv2d(latent_dim // 2, 32, kernel_size=3, stride=1, padding=1),
             activation(True),
             nn.Conv2d(32, 1, kernel_size=1, stride=1, padding=0),
-            activation(True),
             nn.Softplus()
         )
 
