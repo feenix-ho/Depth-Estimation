@@ -128,12 +128,10 @@ def online_eval(model, dataloader_eval, gpu, ngpus):
             disp_gt = 1. / gt_depth
             # loss = compute_loss(pred_depth, gt_depth, mask, eps=args.eps,
             #                     trimmed=args.trimmed, num_scale=args.num_scale, alpha=args.alpha)
-            loss = silog_criterion(disp_est, disp_gt, mask)
-
-            depth_est = standardize(1. / disp_est)
-            pred_depth = depth_est.cpu().numpy()
+            loss = silog_criterion(disp_est, disp_gt, mask).cpu().numpy()
             gt_depth = gt_depth.cpu().numpy()
-            loss = loss.cpu().numpy()
+            depth_est = 1. / disp_est.cpu().numpy()
+            pred_depth = standardize(depth_est)
 
         valid_mask = np.logical_and(
             gt_depth > args.min_depth_eval, gt_depth < args.max_depth_eval)
