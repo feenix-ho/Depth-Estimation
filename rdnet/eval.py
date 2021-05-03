@@ -126,14 +126,22 @@ def compute_loss(preds, targets, masks, trimmed=1., num_scale=4, alpha=.5, eps=1
     return loss.mean()
 
 class silog_loss(nn.Module):
-    def __init__(self, variance_focus):
+    def __init__(self, variance_focus, num_scale):
         super(silog_loss, self).__init__()
         self.variance_focus = variance_focus
+        self.num_scale = num_scale
+
+    def silog(self, depth_est, depth_gt, mask):
+        d = torch.log(depth_est[mask]) - torch.log(depth_gt[mask])
+        return torch.sqrt((d ** 2).mean() - self.variance_focus * (d.mean() ** 2))
 
     def forward(self, depth_est, depth_gt, mask):
-        try:
-            d = torch.log(depth_est[mask]) - torch.log(depth_gt[mask])
-            return torch.sqrt((d ** 2).mean() - self.variance_focus * (d.mean() ** 2)) * 10.
-        except:
-            print(depth_gt.min())
-            assert False
+        total = 0
+        step = 1
+
+        for scale in range(self.num_scale):
+            total += self.silog(preds[:, :, ::step, ::step],
+                                targets[:, :, ::step, ::step], masks[:, :, ::step, ::step])
+            step *= 2
+
+        return total / self.num_scale

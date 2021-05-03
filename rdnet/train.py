@@ -51,7 +51,7 @@ inv_normalize = transforms.Normalize(
     mean=[-0.485/0.229, -0.456/0.224, -0.406/0.225],
     std=[1/0.229, 1/0.224, 1/0.225]
 )
-silog_criterion = silog_loss(variance_focus=args.variance_focus)
+silog_criterion = silog_loss(variance_focus=args.variance_focus, num_scale=args.num_scale)
 
 num_metrics = 10
 low_num = 7

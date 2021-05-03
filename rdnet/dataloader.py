@@ -154,7 +154,7 @@ class DataLoadPreprocess(Dataset):
             depth_gt = depth_gt / 1000.0
             mask &= depth_gt > .1
 
-            image, depth_gt = self.train_preprocess(image, depth_gt)
+            # image, depth_gt = self.train_preprocess(image, depth_gt)
             sample = {'image': image, 'depth': depth_gt,
                       'embedding': embedding, 'bbox': bbox, 'mask': mask
                       }
