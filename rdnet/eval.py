@@ -16,7 +16,7 @@ def compute_errors(depths, preds, masks):
         gt = depth[mask]
         pred = est[mask]
 
-        pred *= np.mean(gt / pred)
+        gt *= np.mean(pred / gt)
 
         err = np.abs(np.log(pred) - np.log(gt))
         d1 = (err < np.log(1.25) * 1).mean()
