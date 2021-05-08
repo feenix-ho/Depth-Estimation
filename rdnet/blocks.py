@@ -86,9 +86,9 @@ class InjectionBlock(nn.Module):
     '''
     Description:
         Perform cross-attention between embeddings before fusing with image patches:
-        - Cross-attention module will learn the relational information between objects
+        - Cross-attention module will learn the relational information between objects without the needs for explicit relations from Scene Graph
         - Visual - relationship fusion will inject knowledge from relation into patches
-        through concatenation/sum
+        through concatenation/sum between the patches of transformed embeddings and image patches
     Params:
         - emb_size: dimension of embedding tensor
         - inp_dim: dimension of input patches
@@ -152,8 +152,17 @@ class InjectionBlock(nn.Module):
 
 class ScratchBlock(nn.Module):
     '''
-        Descriptions:
-        Params:
+    Descriptions: Performing multi-level refinement of input patches by running deep Transformer to extract visual information
+                    from low level to high level while giving the Reassample block the latent represetations of input patches
+                    at desired level as specified by the hooks
+    Params:
+        - hidden_dim: the isotropic hidden dimension of ScratchBlock, serves as input and output dimension of individual Transformer
+        - max_patches: maximum number of patches in each sample
+        - hooks: desired level of Transformer from which Reassamble block will get the representations to proceed
+        - use_readout: type of readout operation to use with 3 kind: ignore, add or project (as DPT)
+        - transformer: the backbone Transformer class to be used as building block of Scratch
+        - landmarks: for Nysotromer, it is required to specify number of landmarks (or Nystrom) which dictates
+                        how close the approximated attention map to the original plain Transformer
     '''
 
     def __init__(self, hidden_dim, max_patches, hooks, use_readout, transformer, landmarks, **kwargs):
@@ -171,6 +180,10 @@ class ScratchBlock(nn.Module):
             pre = cur
 
     def forward(self, embs):
+        '''
+        Params: Patches with shape of BxPxD which carry the information of images after the injection of prior knowledge
+        Return: A list of 4 latent representations as specified by hooks in the init phase
+        '''
         b, p, _ = embs.shape
         x = embs + self.pos_emb[:, :p]
         results = []
@@ -186,6 +199,16 @@ class ScratchBlock(nn.Module):
 
 
 class ReassembleBlock(nn.Module):
+    '''
+    Description: This block reshape and project information of the input patches onto image-like tensor
+                 which will then be refined through Convolutional and ConvTranspose layer to add inductive bias
+                 that helps the model preserve spatial locality (nearby patches are able to affect each other)
+    Params:
+        - num_patches: number of patches in the input patches
+        - inp_dim: input dimension of patches which is the length of latent represetations obtain from ScratchBlock
+        - out_dims: list of 4 numbers determine the dimensions of 4 outputs of Reassamble from low level to high level
+        - start_index: the number of cls_token prepended into patches from ScratchBlock
+    '''
     def __init__(self, num_patches, inp_dim, out_dims, start_index=1, **kwargs):
         super().__init__()
         self.reassembles = nn.ModuleList()
@@ -284,6 +307,10 @@ class ReassembleBlock(nn.Module):
         )
 
     def forward(self, embs):
+        '''
+        Params: A list of 4 latent representations as output of ScratchBlock
+        Return: A list of 4 transformed image-like tensor that have already been refined through inductive bias of Conv layers
+        '''
         results = []
 
         for emb, reassemble in zip(embs, self.reassembles):
@@ -298,6 +325,17 @@ class ReassembleBlock(nn.Module):
 
 
 class RefineBlock(nn.Module):
+    '''
+    Description: Fusing multi-scale information derived from Reassampple Block into a single, unified image-like tensor
+                 with desired shape as specified by out_shape while preserving the locality of spatially nearby tensors
+    Params:
+        - in_shape: Input dimension as output shape of Reassmple Block
+        - out_shape: Number of channel for the output of this block
+        - activation: torch.nn activation function to be used in RefineBlock, ReLU will ignore negative value
+                      while SiLU/GELU/Softplus will give the non-zero outputs for negative outputs, prevent
+                      gradient vanishing
+    
+    '''
     def __init__(self, in_shape, out_shape, activation, groups=1, expand=False, use_bn=False, **kwargs):
         super().__init__()
 
@@ -364,6 +402,11 @@ class RefineBlock(nn.Module):
             self.refinenets.append(_make_fusion_block(out_shape, use_bn, activation))
 
     def forward(self, embs):
+        '''
+        Params: List of 4 embedding tensors as generated by ReassmableBlock which contains multi-scale information
+                to be fused by RefineBlock
+        Return: A single image-like tensor resulted from fusion across multi-level information of Reassmable
+        '''
         y = None
         results = []
 
