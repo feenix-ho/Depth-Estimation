@@ -68,7 +68,7 @@ class Loader(object):
             self.testing_samples = DataLoadPreprocess(
                 args, mode, transform=preprocessing_transforms(mode))
             self.data = DataLoader(self.testing_samples,
-                                   1, shuffle=False, num_workers=1)
+                                   args.batch_size, shuffle=False, num_workers=1)
 
         else:
             print(
