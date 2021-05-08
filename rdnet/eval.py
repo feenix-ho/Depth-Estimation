@@ -18,21 +18,41 @@ def compute_errors(depths, preds, masks):
 
         gt *= np.median(pred) / np.median(gt)
 
-        err = np.log(pred) - np.log(gt)
-        thresh = np.abs(err)
-        d1 = (thresh < np.log(1.25) * 1).mean()
-        d2 = (thresh < np.log(1.25) * 2).mean()
-        d3 = (thresh < np.log(1.25) * 3).mean()
+        # err = np.log(pred) - np.log(gt)
+        # thresh = np.abs(err)
+        # d1 = (thresh < np.log(1.25) * 1).mean()
+        # d2 = (thresh < np.log(1.25) * 2).mean()
+        # d3 = (thresh < np.log(1.25) * 3).mean()
 
-        sqe = (gt - pred) ** 2
-        rmse = np.sqrt(sqe.mean())
+        # sqe = (gt - pred) ** 2
+        # rmse = np.sqrt(sqe.mean())
+        # abs_rel = np.mean(np.abs(gt - pred) / gt)
+        # sq_rel = np.mean(sqe / gt)
+
+        # mse_log = np.mean(err ** 2)
+        # rmse_log = np.sqrt(mse_log)
+        # silog = np.sqrt(mse_log - np.mean(err) ** 2) * 100
+        # log10 = np.mean(thresh / np.log(10))
+
+        thresh = np.maximum((gt / pred), (pred / gt))
+        d1 = (thresh < 1.25).mean()
+        d2 = (thresh < 1.25 ** 2).mean()
+        d3 = (thresh < 1.25 ** 3).mean()
+
+        rms = (gt - pred) ** 2
+        rms = np.sqrt(rms.mean())
+
+        log_rms = (np.log(gt) - np.log(pred)) ** 2
+        log_rms = np.sqrt(log_rms.mean())
+
         abs_rel = np.mean(np.abs(gt - pred) / gt)
-        sq_rel = np.mean(sqe / gt)
+        sq_rel = np.mean(((gt - pred) ** 2) / gt)
 
-        mse_log = np.mean(err ** 2)
-        rmse_log = np.sqrt(mse_log)
-        silog = np.sqrt(mse_log - np.mean(err) ** 2) * 100
-        log10 = np.mean(thresh / np.log(10))
+        err = np.log(pred) - np.log(gt)
+        silog = np.sqrt(np.mean(err ** 2) - np.mean(err) ** 2) * 100
+
+        err = np.abs(np.log10(pred) - np.log10(gt))
+        log10 = np.mean(err)
 
         errors += np.asarray([silog, abs_rel, log10, rmse, sq_rel, rmse_log, d1, d2, d3])
         cnt += 1
