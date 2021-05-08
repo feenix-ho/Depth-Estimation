@@ -160,9 +160,9 @@ class silog_loss(nn.Module):
         step = 1
 
         try:
-            assert preds[mask].min() > 1e-6
+            assert preds[masks].min() > 1e-6
         except:
-            print(preds[mask].min())
+            print(preds[masks].min())
             assert False
 
         for scale in range(self.num_scale):
