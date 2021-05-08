@@ -159,6 +159,12 @@ class silog_loss(nn.Module):
         total = 0
         step = 1
 
+        try:
+            assert depth_est[mask].min() > 1e-6
+        except:
+            print(depth_est[mask].min())
+            assert False
+
         for scale in range(self.num_scale):
             total += self.silog(preds[:, :, ::step, ::step],
                                 targets[:, :, ::step, ::step], masks[:, :, ::step, ::step])
