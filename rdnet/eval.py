@@ -54,7 +54,7 @@ def compute_errors(depths, preds, masks):
         err = np.abs(np.log10(pred) - np.log10(gt))
         log10 = np.mean(err)
 
-        errors += np.asarray([silog, abs_rel, log10, rmse, sq_rel, rmse_log, d1, d2, d3])
+        errors += np.asarray([silog, abs_rel, log10, rms, sq_rel, log_rms, d1, d2, d3])
         cnt += 1
 
     return errors / cnt
@@ -160,9 +160,9 @@ class silog_loss(nn.Module):
         step = 1
 
         try:
-            assert depth_est[mask].min() > 1e-6
+            assert preds[mask].min() > 1e-6
         except:
-            print(depth_est[mask].min())
+            print(preds[mask].min())
             assert False
 
         for scale in range(self.num_scale):
