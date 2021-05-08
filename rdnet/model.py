@@ -175,7 +175,7 @@ class RDNet(nn.Module):
             nn.Conv2d(latent_dim // 2, 32, kernel_size=3, stride=1, padding=1),
             activation(True),
             nn.Conv2d(32, 1, kernel_size=1, stride=1, padding=0),
-            nn.Softplus()
+            activation(True)
         )
 
     def forward(self, images, embs, locations):
@@ -213,9 +213,11 @@ class RDNet(nn.Module):
         else:
             depth = inv_depth
 
-        return F.interpolate(
+        depth = F.interpolate(
             depth,
             size=images.shape[2:4],
             mode="bilinear",
             align_corners=False
         )
+
+        return F.softplus(depth)
