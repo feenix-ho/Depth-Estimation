@@ -131,7 +131,7 @@ class InjectionBlock(nn.Module):
 
         y = self.proj(imgs)
         y = rearrange(y, 'b n p d -> (b n) p d')
-        y += x
+        y *= x
 
         cls_token = repeat(self.cls_token, 'p d -> b p d', b=b*n)
         y += self.pos_emb[:, :p]
